@@ -1,12 +1,8 @@
 from scipy import optimize as opt
 import numpy as np
 import math
-
-POS_COST    = 60000 #1000000
-ANGLE_COST  = 6000  #80000
-RADIUS_COST = 50 #1000 
-RADIUS_CONT_COST = 10
-LENGTH_COST = 0
+import json
+import sys
 
 class point(object):
     """docstring for dot"""
@@ -17,6 +13,11 @@ class point(object):
 
 class path_finder(object):
     """docstring for path_finder"""
+    POS_COST    = 60000 #60000
+    ANGLE_COST  = 6000  #6000
+    RADIUS_COST = 50 #50 
+    RADIUS_CONT_COST = 10
+    LENGTH_COST = 0
 
     HIGHEST_POLYNOM = 5
     MIN = -1.
@@ -194,11 +195,11 @@ class path_finder(object):
         self.costs["length_cost"]      = self.get_length_cost()
 
         costs_weighted = {}
-        costs_weighted["pos_cost"]         = POS_COST * self.costs["pos_cost"]
-        costs_weighted["angle_cost"]       = ANGLE_COST * self.costs["angle_cost"]
-        costs_weighted["radius_cost"]      = RADIUS_COST * self.costs["radius_cost"]
-        costs_weighted["radius_cont_cost"] = RADIUS_CONT_COST * self.costs["radius_cont_cost"]
-        costs_weighted["length_cost"]      = LENGTH_COST * self.costs["length_cost"]
+        costs_weighted["pos_cost"]         = self.POS_COST * self.costs["pos_cost"]
+        costs_weighted["angle_cost"]       = self.ANGLE_COST * self.costs["angle_cost"]
+        costs_weighted["radius_cost"]      = self.RADIUS_COST * self.costs["radius_cost"]
+        costs_weighted["radius_cont_cost"] = self.RADIUS_CONT_COST * self.costs["radius_cont_cost"]
+        costs_weighted["length_cost"]      = self.LENGTH_COST * self.costs["length_cost"]
 
         return sum(costs_weighted.values())
 
@@ -219,7 +220,7 @@ class path_finder(object):
             self.scalars_x = np.delete(self.scalars_x, np.s_[(abs(poly_diff-2)):], 1)
             self.scalars_y = np.delete(self.scalars_y, np.s_[(abs(poly_diff-2)):], 1)
         self.HIGHEST_POLYNOM = val
-
+    
     def find_velocities(self):
         xpoints = [xpoint(self.x(0, -1), self.y(0, -1))]
         xpoint_index = 0
@@ -242,3 +243,32 @@ class path_finder(object):
             for s in np.arange(self.MIN, self.MAX + res, res):
                 ys.append(self.y(index, s))
         return (xs,ys)
+
+    def print_path(self):
+        xs, ys = self.draw_graph(0.01)
+        points = []
+        for i in range(len(xs)):
+            points.append({"x":xs[i], "y":ys[i]})
+        print (json.dumps(points))
+
+def main(data):
+    data = json.loads(data)
+    points = data["points"]
+    params = data["params"]
+
+    path_points = [point(path_point["x"], path_point["y"], path_point["heading"]) for path_point in points]
+    path = path_finder(*path_points)
+
+    path.update_poly(params.get("poly", 3))
+    
+    path.POS_COST = params.get("pos", 60000)
+    path.ANGLE_COST  = params.get("angle", 6000)
+    path.RADIUS_COST = params.get("radius", 50) 
+    path.RADIUS_CONT_COST = params.get("radius_cont", 10)
+    path.LENGTH_COST = params.get("length", 0)
+
+    path.find_scalars()
+    path.print_path()
+
+if __name__ == "__main__":
+    main(sys.argv[1])

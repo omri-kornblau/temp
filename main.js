@@ -1,5 +1,6 @@
 // Modules to control application life and create native browser window
 const {app, BrowserWindow} = require('electron')
+const python_script = "path_finder.py";
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -7,13 +8,13 @@ let mainWindow
 
 function createWindow () {
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: 1300, height: 800})
+  mainWindow = new BrowserWindow({width: 1200, height: 800})
 
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools()
+  // mainWindow.webContents.openDevTools()
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
@@ -41,6 +42,7 @@ app.on('window-all-closed', function () {
 app.on('activate', function () {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
+
   if (mainWindow === null) {
     createWindow()
   }
@@ -48,3 +50,37 @@ app.on('activate', function () {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+const http = require('http');
+const server = http.createServer((req, res) => {
+    if (req.method === 'POST') {
+        // Handle post info...
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString(); // convert Buffer to string
+        });
+        req.on('end', () => {
+            var input = decodeURIComponent(body).split("=")[1];
+            console.log(input);
+
+            var PythonShell = require('python-shell');
+            var options = {
+              mode: 'text',
+              pythonPath: 'C:\\Python37\\python.exe',
+              pythonOptions: ['-u'], // get print results in real-time
+              scriptPath: 'Python',
+              args: [input]
+            };
+
+            var pyshell = new PythonShell(python_script, options);
+            pyshell.on('message', function (message) {
+              // received a message sent from the Python script (a simple "print" statement)
+              res.end(message);
+            });
+
+            pyshell.end(function (err,code,signal) {if (err) throw err;});
+        });
+    }
+});
+
+server.listen(3000);
