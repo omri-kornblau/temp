@@ -2,7 +2,7 @@ var ctx;
 var field_img;
 var field_canvas;
 var points = [];
-var point_size = 20;
+var point_size = 5;
 /*function save_data() {
   data = "";
   points = [];
@@ -47,20 +47,35 @@ function init_field() {
 }
 
 function draw_points (){
-  points = [{x: 20, y:20},{x: 20, y:20},{x: 2, y:4}]; 
-  color = "#2CFF2C";
-  ctx.fillstyle = color;
-  //for (var i = 0; i < points.length; i++){
-    alert(points[1]["x"]);
-    ctx.beginPath();
-    //ctx.moveTo(0, 0);
-    ctx.arc (20,points[0]["Y"],point_size,0,2*Math.PI);
-    //ctx.arc (points[1]["x"], points[1]["Y"], point_size, 0, Math.PI * 2, true);
-    ctx.stroke();
-    ctx.fill();
-    ctx.closePath();
+  points = [{x: 30, y:30},{x: 90, y:90},{x: 150, y:150}]; 
+  color = "#ffffff";
+ 
+  ctx.beginPath();
+  ctx.fillStyle = color;
+  ctx.lineWidth = 2;
 
-  //}
+  for (var i = 0; i < 100; i++){
+    ctx.beginPath();
+    ctx.arc (i,i,2,0,2*Math.PI);
+    ctx.fillStyle = color;
+    ctx.fill();
+    //ctx.moveTo(points[i]["x"], points[i]["y"]);
+    //ctx.arc (points[1]["x"], points[1]["Y"], point_size, 0, Math.PI * 2, true);
+    //ctx.closePath();
+  }
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  for (var i = 0; i < points.length; i++){
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc (points[i]["x"], points[i]["y"],point_size,0,2*Math.PI);
+    ctx.fill();
+    ctx.stroke();
+    //ctx.moveTo(points[i]["x"], points[i]["y"]);
+    //ctx.arc (points[1]["x"], points[1]["Y"], point_size, 0, Math.PI * 2, true);
+    //ctx.closePath();
+  }
+    ctx.stroke();
 }
 
 function add_point () {

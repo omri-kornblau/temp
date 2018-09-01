@@ -2695,13 +2695,25 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
 #chart-container {
   display: block;
   width: 680px;
-  height: 340px; 
+  height: 680px; 
   margin: 0px auto; 
   background-size: contain;
   border-radius: 10px;
   -webkit-box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.5);
 }
 
+@media (max-width: 768px) {
+#field {
+  width: 500px;
+  height: 250 px; 
+  margin: 0px auto; 
+  background-size: contain;
+  border-radius: 10px;
+  -webkit-box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.5);
+  }
+}
+
+@media (min-width: 768px) {
 #field {
   width: 680px;
   height: 340px; 
@@ -2709,8 +2721,8 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
   background-size: contain;
   border-radius: 10px;
   -webkit-box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.5);
+  }
 }
-
 .scrollbar-primary::-webkit-scrollbar {
   border-radius: 5px;
   width: 8px;
