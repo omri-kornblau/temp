@@ -51,6 +51,8 @@ app.on('activate', function () {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 
+console.log(process.platform);
+
 const http = require('http');
 const server = http.createServer((req, res) => {
     if (req.method === 'POST') {
@@ -64,13 +66,25 @@ const server = http.createServer((req, res) => {
             console.log(input);
 
             var PythonShell = require('python-shell');
-            var options = {
-              mode: 'text',
-              pythonPath: 'C:\\Python37\\python.exe',
-              pythonOptions: ['-u'], // get print results in real-time
-              scriptPath: 'Python',
-              args: [input]
-            };
+	    if (process.platform === "linux") {
+           	var options = {
+           	   mode: 'text',
+           	   pythonPath: '/usr/bin/python3',
+           	   pythonOptions: ['-u'], // get print results in real-time
+           	   scriptPath: './Python',
+           	   args: [input]
+           	};
+	    }
+	    else {
+		var options = {
+           	   mode: 'text',
+           	   pythonPath: 'C:\\Python37\\python.exe',
+           	   pythonOptions: ['-u'], // get print results in real-time
+           	   scriptPath: 'Python',
+           	   args: [input]
+           	};
+
+	    }
 
             var pyshell = new PythonShell(python_script, options);
             pyshell.on('message', function (message) {
