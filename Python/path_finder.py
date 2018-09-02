@@ -153,7 +153,7 @@ class path_finder(object):
         return cost
     
     def get_length_cost (self):
-        return self.length_cost
+        return self.length_cost**2
 
     def get_radius_cont_cost(self):
         cost = 0
