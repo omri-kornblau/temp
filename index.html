@@ -44,35 +44,55 @@
     </div>
 
     <div class="container">
-        <div class="col-xs-5">
+        <div class="col-md-5">
             <div class="panel panel-primary">
-              <div class="panel-heading">
-                <h3 class="panel-title">Parameters</h3>
-              </div>
-              <div class="panel-body">
-              	<table class="table-condensed">
-              		<tbody>
-              			<tr>
-		                	<td>Polynom</td><td><input class="form-control form-control-small" type='number' placeholder="" id="polynom" value=3 ></td>
-		                </tr>
-		                <tr>
-		                	<td>Position cost</td><td><input class="form-control form-control-small" type='number' placeholder="" id="position" value=60000 ></td>
-		                </tr>
-		                <tr>
-		                	<td>Angle cost</td><td><input class="form-control form-control-small" type='number' placeholder="" id="angle" value=6000 ></td>
-		                </tr>
-		                <tr>
-		                	<td>Radius cost</td><td><input class="form-control form-control-small" type='number' placeholder="" id="radius" value=50 ></td>
-		                </tr>
-		                <tr>
-		                	<td>Radius continuity cost</td><td><input class="form-control form-control-small" type='number' placeholder="" id="radius_cont" value=10 ></td>
-		                </tr>
-		                <tr>
-		                	<td>Length cost</td><td><input class="form-control form-control-small" type='number' placeholder="" id="length" value=0 ></td>
-		                </tr>
-              		</tbody>
-              	</table>
-              </div>
+                <div class="panel-heading">
+                    <h3 class="panel-title">Parameters</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="scrollpan scrollbar-primary">
+                        <div style ="margin-right: 20px">
+                          	<table class="table">
+                                <!-- <thead>
+                                    <th>Name</th>
+                                    <th style="text-align: center">Value</th>
+                                    <th></th>
+                                </thead> -->
+                          		<tbody>
+                                    <tr>
+            		                	<td>Polynom</td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="polynom" value=3 ></td>
+            		                </tr>
+            		                <tr>
+            		                	<td style = "text-align: center">Position</td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="position" value=1 ></td>
+                                        <td><span class="badge badge-default" id="pos_cost_val">cost</span></td>
+            		                </tr>
+            		                <tr>
+            		                	<td>Angle</td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="angle" value=1 ></td>
+                                        <td><span class="badge badge-default" id="angle_cost_val">cost</span></td>
+            		                </tr>
+            		                <tr>
+            		                	<td>Radius</td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="radius" value=1 ></td>
+            		                    <td><span class="badge badge-default" id="radius_cost_val">cost</span></td>
+                                    </tr>
+            		                <tr>
+            		                	<td>Radius continuity</td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="radius_cont" value=1 ></td>
+            		                    <td><span class="badge badge-default" id="radius_cont_cost_val">cost</span></td>
+                                    </tr>
+            		                <tr>
+            		                	<td>Length</td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="length" value=0 ></td>
+            		                  <td><span class="badge badge-default" id="length_cost_val">cost</span></td>
+                                    </tr>
+                          		</tbody>
+                          	</table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -82,13 +102,13 @@
             </div>
         </div>
         
-        <div class="col-xs-5">
+        <div class="col-md-5">
             <div class="panel panel-primary">
               <div class="panel-heading">
                 <h3 class="panel-title">Points</h3>
               </div>
               <div class="panel-body">
-                <div class="scrollbar scrollbar-primary">
+                <div class="scrollpan scrollbar-primary">
                     <div style="margin-right: 20px;">
                         <table class="table-condensed">
                         <thead>

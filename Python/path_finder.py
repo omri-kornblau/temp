@@ -244,12 +244,13 @@ class path_finder(object):
                 ys.append(self.y(index, s))
         return (xs,ys)
 
-    def print_path(self):
-        xs, ys = self.draw_graph(0.01)
-        points = []
+    def send_data(self):
+        xs, ys = self.draw_graph(0.001)
+        path_points = []
         for i in range(len(xs)):
-            points.append({"x":xs[i], "y":ys[i]})
-        print (json.dumps(points))
+            path_points.append({"x":xs[i], "y":ys[i]})
+        data = {"path_points": path_points, "costs": self.costs}
+        print (json.dumps(data))
 
 def main(data):
     data = json.loads(data)
@@ -261,14 +262,14 @@ def main(data):
 
     path.update_poly(params.get("poly", 3))
     
-    path.POS_COST = params.get("pos", 60000)
-    path.ANGLE_COST  = params.get("angle", 6000)
-    path.RADIUS_COST = params.get("radius", 50) 
-    path.RADIUS_CONT_COST = params.get("radius_cont", 10)
-    path.LENGTH_COST = params.get("length", 0)
+    path.POS_COST = params.get("pos", 60000)*60000
+    path.ANGLE_COST  = params.get("angle", 6000)*6000
+    path.RADIUS_COST = params.get("radius", 50)*50 
+    path.RADIUS_CONT_COST = params.get("radius_cont", 10)*10
+    path.LENGTH_COST = params.get("length", 0)*0.001
 
     path.find_scalars()
-    path.print_path()
+    path.send_data()
 
 if __name__ == "__main__":
     main(sys.argv[1])

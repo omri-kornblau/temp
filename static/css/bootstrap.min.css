@@ -2090,10 +2090,11 @@ th{
     margin-bottom:10px
 }
 .table>tbody>tr>td,.table>tbody>tr>th,.table>tfoot>tr>td,.table>tfoot>tr>th,.table>thead>tr>td,.table>thead>tr>th{
-    padding:8px;
+    padding:6px;
     line-height:1.42857143;
     vertical-align:top;
-    border-top:1px solid #ddd
+    border-top:1px solid #ddd;
+     text-align: center;
 }
 .table>thead>tr>th{
     vertical-align:bottom;
@@ -2109,8 +2110,9 @@ th{
     background-color:#fff
 }
 .table-condensed>tbody>tr>td,.table-condensed>tbody>tr>th,.table-condensed>tfoot>tr>td,.table-condensed>tfoot>tr>th,.table-condensed>thead>tr>td,.table-condensed>thead>tr>th{
-    padding:3px
+    padding:3px;
 }
+
 .table-bordered{
     border:1px solid #ddd
 }
