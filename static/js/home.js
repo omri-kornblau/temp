@@ -20,7 +20,7 @@ function get_points () {
     point["x"] = Number(points_elements[i].querySelectorAll('.x > input')[0].value);
     point["y"] = Number(points_elements[i].querySelectorAll('.y > input')[0].value);
     point["heading"] = Number(points_elements[i].querySelectorAll('.heading > input')[0].value)*Math.PI/180;
-    point["reverse"] = points_elements[i].querySelectorAll('.reverse > input:checked').value;
+    point["reverse"] = String(points_elements[i].querySelectorAll('.reverse > label > input')[0].checked);
     points.push(point);
   }
   return points
@@ -82,10 +82,10 @@ function draw_field() {
 
 function add_point () {
   $('#points').append("<tr class='point move-cursor' class='point'>"+
-    "<td class='x'><input class='form-control form-control-small' type='number' placeholder='X' oninput='draw_field()'></td>"+
-    "<td class='y'><input class='form-control form-control-small' type='number' placeholder='Y' oninput='draw_field()'></td>"+
-    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='draw_field()'></td>"+
-    "<td class='reverse'><label class='toggle'><input type='checkbox' value='true' checked><span class='handle'></span></label></td>"+
+    "<td class='x'><input class='form-control form-control-small' type='number' placeholder='X' oninput='draw_field()' value=1></td>"+
+    "<td class='y'><input class='form-control form-control-small' type='number' placeholder='Y' oninput='draw_field()' value=1></td>"+
+    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='draw_field()' value=0></td>"+
+    "<td class='reverse'><label class='toggle'><input type='checkbox' value='true'><span class='handle'></span></label></td>"+
     "<td class='delete'><a class='btn btn-danger btn-small' onclick='delete_point(this)'>"+
     "<i class='glyphicon glyphicon-trash glyphicon-small'></i>"+
     "</a></td>"+
@@ -119,9 +119,14 @@ function solve() {
   var data = JSON.stringify(data);
   $.post("http://127.0.0.1:3000/", {"data": data}, function(data, status){
     var parsed_data = JSON.parse(data);
-    path_points = parsed_data["path_points"]; 
-    costs = parsed_data["costs"]; 
+    path_points = []
+    for (var i = 0; i < parsed_data.length; i++) {
+      path_points = path_points.concat(parsed_data[i]["path_points"]);
+    }
+    console.log("total:");
+    console.log(path_points);
+    //costs = parsed_data["costs"];
     draw_field();
-    update_costs();
+    //update_costs();
   });
 }

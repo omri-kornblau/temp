@@ -6,10 +6,11 @@ import sys
 
 class point(object):
     """docstring for dot"""
-    def __init__(self, x, y, angle):
+    def __init__(self, x, y, angle, switch):
         self.x = x
         self.y = y
         self.angle = angle
+        self.switch = switch
 
 class path_finder(object):
     """docstring for path_finder"""
@@ -244,32 +245,42 @@ class path_finder(object):
                 ys.append(self.y(index, s))
         return (xs,ys)
 
-    def send_data(self):
+    def create_data(self):
         xs, ys = self.draw_graph(0.001)
         path_points = []
         for i in range(len(xs)):
             path_points.append({"x":xs[i], "y":ys[i]})
         data = {"path_points": path_points, "costs": self.costs}
-        print (json.dumps(data))
+        return data
 
 def main(data):
     data = json.loads(data)
     points = data["points"]
     params = data["params"]
 
-    path_points = [point(path_point["x"], path_point["y"], path_point["heading"]) for path_point in points]
-    path = path_finder(*path_points)
+    path_points = [point(path_point["x"], path_point["y"], path_point["heading"], path_point["reverse"]) for path_point in points]
+    pathes = []
+    start = 0
+    for index, cur_point in enumerate(path_points):
+        if index + 1 == len(path_points):
+            pathes.append(path_finder(*path_points[start:]))
+            break
+        if cur_point.switch == "true":
+            pathes.append(path_finder(*path_points[start:index + 1]))
+            start = index
 
-    path.update_poly(params.get("poly", 3))
-    
-    path.POS_COST = params.get("pos", 60000)*60000
-    path.ANGLE_COST  = params.get("angle", 6000)*6000
-    path.RADIUS_COST = params.get("radius", 50)*50 
-    path.RADIUS_CONT_COST = params.get("radius_cont", 10)*10
-    path.LENGTH_COST = params.get("length", 0)*0.001
+    results = []
+    for path in pathes:
+        path.update_poly(params.get("poly", 3))    
+        path.POS_COST = params.get("pos", 60000)*60000
+        path.ANGLE_COST  = params.get("angle", 6000)*6000
+        path.RADIUS_COST = params.get("radius", 50)*50 
+        path.RADIUS_CONT_COST = params.get("radius_cont", 10)*10
+        path.LENGTH_COST = params.get("length", 0)*0.001
+        path.find_scalars()
+        results.append(path.create_data())
 
-    path.find_scalars()
-    path.send_data()
+    print(json.dumps(results))
 
 if __name__ == "__main__":
     main(sys.argv[1])
