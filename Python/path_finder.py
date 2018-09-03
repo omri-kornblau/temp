@@ -57,6 +57,25 @@ class path_finder(object):
             scalars[index][0] = b
         return scalars
 
+    def update_scalars(self, scalars_x, scalars_y, points_amount):
+        if (not scalars_x == None):
+            self.HIGHEST_POLYNOM = int(len(scalars_x)/(points_amount-1))-1
+            self.scalars_x = np.array(scalars_x).reshape(points_amount-1, self.HIGHEST_POLYNOM+1)
+            self.scalars_y = np.array(scalars_y).reshape(points_amount-1, self.HIGHEST_POLYNOM+1)
+
+    def update_poly(self, val):
+        poly_diff = val - self.HIGHEST_POLYNOM
+
+        if (poly_diff > 0):
+            zeros = np.zeros(len(self.points[:-1]) * (poly_diff)).reshape(len(self.points[:-1]) , poly_diff) 
+            self.scalars_x = np.append(self.scalars_x, zeros , 1)
+            self.scalars_y = np.append(self.scalars_y, zeros , 1)
+        elif (poly_diff < 0):
+            self.scalars_x = np.delete(self.scalars_x, np.s_[(abs(poly_diff-2)):], 1)
+            self.scalars_y = np.delete(self.scalars_y, np.s_[(abs(poly_diff-2)):], 1)
+
+        self.HIGHEST_POLYNOM = val
+    
     def x(self, index, s):
         """
         :param int index: the index of the path
@@ -209,17 +228,6 @@ class path_finder(object):
     def find_scalars(self):
         #return opt.minimize(self.cost_function, np.ravel([self.scalars_x, self.scalars_y]), method = self.OPTIMIZE_FUNCTION, cost_tol = self.COST_TOLS, get_costs = self.get_costs)
         return opt.minimize(self.cost_function, np.ravel([self.scalars_x, self.scalars_y]), method = self.OPTIMIZE_FUNCTION)
-    def update_poly(self, val):
-        poly_diff = val - self.HIGHEST_POLYNOM
-
-        if (poly_diff > 0):
-            zeros = np.zeros(len(self.points[:-1]) * (poly_diff)).reshape(len(self.points[:-1]) , poly_diff) 
-            self.scalars_x = np.append(self.scalars_x, zeros , 1)
-            self.scalars_y = np.append(self.scalars_y, zeros , 1)
-        elif (poly_diff < 0):
-            self.scalars_x = np.delete(self.scalars_x, np.s_[(abs(poly_diff-2)):], 1)
-            self.scalars_y = np.delete(self.scalars_y, np.s_[(abs(poly_diff-2)):], 1)
-        self.HIGHEST_POLYNOM = val
     
     def find_velocities(self):
         xpoints = [xpoint(self.x(0, -1), self.y(0, -1))]
@@ -249,17 +257,20 @@ class path_finder(object):
         path_points = []
         for i in range(len(xs)):
             path_points.append({"x":xs[i], "y":ys[i]})
-        data = {"path_points": path_points, "costs": self.costs}
+        data = {"path_points": path_points, "costs": self.costs, "scalars_x": list(np.ravel(self.scalars_x)), "scalars_y": list(np.ravel(self.scalars_y))}
         print (json.dumps(data))
 
 def main(data):
+
     data = json.loads(data)
     points = data["points"]
     params = data["params"]
+    scalars_x = data["scalars_x"]
+    scalars_y = data["scalars_y"]
 
     path_points = [point(path_point["x"], path_point["y"], path_point["heading"]) for path_point in points]
     path = path_finder(*path_points)
-
+    path.update_scalars(scalars_x, scalars_y, len(points))
     path.update_poly(params.get("poly", 3))
     
     path.POS_COST = params.get("pos", 60000)*60000

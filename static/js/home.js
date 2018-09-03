@@ -1,11 +1,12 @@
-var data = ""
+//var data = "";
 var ctx;
 var field_img;
 var field_canvas;
 var pixel_meters;
 
-var path_points = [];
-var costs = [];
+var parsed_data = [{"path_points":[],"scalars_x":null, "scalars_y":null}]; //stores all the data got from python 
+var data_version = 0; //stores current data version
+var scalars = [];
 
 const point_size = 5;
 const path_size = 1;
@@ -27,22 +28,21 @@ function get_points () {
 }
 
 
-function draw_path (){
+function draw_path (points){
   ctx.beginPath();
   ctx.moveTo(0,0);
-  for (var i = 0; i < path_points.length; i++){
-    var val = parseInt(i*100/path_points.length);
+  for (var i = 0; i < points.length; i++){
+    var val = parseInt(i*100/points.length);
     color = "hsl("+val+",100%,60%)";
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc (path_points[i]["x"]*pixel_meters, path_points[i]["y"]*pixel_meters,path_size, 0, 2*Math.PI);
+    ctx.arc (points[i]["x"]*pixel_meters, points[i]["y"]*pixel_meters,path_size, 0, 2*Math.PI);
     ctx.fill();
   }
   ctx.closePath();
 }
 
-function draw_points () {
-  var points = get_points();
+function draw_points (points) {
   color = "#ffffff";
 
   for (var i = 0; i < points.length; i++){
@@ -63,23 +63,50 @@ function init_field() {
     ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
     ctx.shadowColor = '#101010';
     ctx.shadowBlur = 10;
-    draw_points();
+    draw_points(get_points());
   };
   field_img.src = 'static/img/field_background.png';
   pixel_meters = field_canvas.width/real_field_width;
-  
+}
+
+function get_data () {
+  return(parsed_data[data_version]);
 }
 
 function draw_field() {
     ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
     ctx.shadowBlur = 0;
     ctx.imageSmoothingEnabled = false;
-    draw_path();
+    draw_path(get_data()["path_points"]);
     ctx.imageSmoothingEnabled = false;
     ctx.shadowBlur = 10;
-    draw_points();
+    draw_points(get_points());
 }
 
+function reset_change (push_item) {
+  if (data_version < parsed_data.length) {
+      parsed_data.splice(data_version+1, parsed_data.length);
+    }
+  parsed_data.push(push_item);
+  data_version++;
+  draw_field();
+}
+
+function redo_change () {
+  if (data_version < parsed_data.length-1) {
+    data_version ++;
+    draw_field();
+    update_costs();
+  }
+}
+
+function undo_change () {
+  if (data_version > 1) {
+    data_version --;
+    draw_field();
+    update_costs();
+  }
+}
 function add_point () {
   $('#points').append("<tr class='point move-cursor' class='point'>"+
     "<td class='x'><input class='form-control form-control-small' type='number' placeholder='X' oninput='draw_field()'></td>"+
@@ -90,20 +117,23 @@ function add_point () {
     "<i class='glyphicon glyphicon-trash glyphicon-small'></i>"+
     "</a></td>"+
     "</tr>");
+  reset_change({"path_points":[],"scalars_x":null, "scalars_y":null});
 }
 
+
 function update_costs () {
-  document.getElementById("pos_cost_val").innerHTML = costs["pos_cost"].toPrecision(3);
-  document.getElementById("angle_cost_val").innerHTML = costs["angle_cost"].toPrecision(3);
-  document.getElementById("radius_cost_val").innerHTML = costs["radius_cost"].toPrecision(3);
-  document.getElementById("radius_cont_cost_val").innerHTML = costs["radius_cont_cost"].toPrecision(3);
-  document.getElementById("length_cost_val").innerHTML = costs["length_cost"].toPrecision(3);
+  document.getElementById("pos_cost_val").innerHTML = get_data()["costs"]["pos_cost"].toPrecision(3);
+  document.getElementById("angle_cost_val").innerHTML = get_data()["costs"]["angle_cost"].toPrecision(3);
+  document.getElementById("radius_cost_val").innerHTML = get_data()["costs"]["radius_cost"].toPrecision(3);
+  document.getElementById("radius_cont_cost_val").innerHTML = get_data()["costs"]["radius_cont_cost"].toPrecision(3);
+  document.getElementById("length_cost_val").innerHTML = get_data()["costs"]["length_cost"].toPrecision(3);
 }
 
 function delete_point (elem) {
   $(elem).parent().parent().remove();
-  update_graph();
+  reset_change({"path_points":[],"scalars_x":null, "scalars_y":null});
 }
+
 
 function solve() {
   var points = get_points();
@@ -115,12 +145,16 @@ function solve() {
   params["radius_cont"] = Number(document.getElementById("radius_cont").value);
   params["length"] = Number(document.getElementById("length").value);
 
-  var data = {"params": params, "points":points}
+  var data = {
+    "params": params, 
+    "points":points,
+    "scalars_x":get_data()["scalars_x"], 
+    "scalars_y":get_data()["scalars_y"]};
+
   var data = JSON.stringify(data);
-  $.post("http://127.0.0.1:3000/", {"data": data}, function(data, status){
-    var parsed_data = JSON.parse(data);
-    path_points = parsed_data["path_points"]; 
-    costs = parsed_data["costs"]; 
+  $.post("http://127.0.0.1:3000/", {"data": data}, function(data, status) {
+    reset_change(JSON.parse(data));
+
     draw_field();
     update_costs();
   });
