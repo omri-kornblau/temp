@@ -163,16 +163,15 @@ class path_finder(object):
                 d2x = self.d2xds2(index, s)
                 dy = self.dyds(index, s)
                 d2y = self.d2yds2(index, s)
-                cost += (((d2x * dy) - (d2y * dx)) / (((dx ** 2) + (dy ** 2)) ** 1.5)) ** 4
+                cost += (((d2x * dy) - (d2y * dx)) / (((dx ** 2) + (dy ** 2)) ** 1.5)) ** 2
 
                 self.length_cost += math.sqrt((dx/self.RES)**2 + (dy/self.RES)**2)
                 counter += 1
         cost /= counter
-        self.length_cost /= counter
         return cost
     
     def get_length_cost (self):
-        return self.length_cost**2
+        return self.length_cost
 
     def get_radius_cont_cost(self):
         cost = 0
@@ -277,7 +276,7 @@ def main(data):
     path.ANGLE_COST  = params.get("angle", 6000)*6000
     path.RADIUS_COST = params.get("radius", 50)*50 
     path.RADIUS_CONT_COST = params.get("radius_cont", 10)*10
-    path.LENGTH_COST = params.get("length", 0)*0.001
+    path.LENGTH_COST = params.get("length", 0)*0.00001
 
     path.find_scalars()
     path.send_data()

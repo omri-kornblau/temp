@@ -101,7 +101,7 @@ function redo_change () {
 }
 
 function undo_change () {
-  if (data_version > 1) {
+  if (data_version > 0) {
     data_version --;
     draw_field();
     update_costs();
@@ -118,8 +118,20 @@ function add_point () {
     "</a></td>"+
     "</tr>");
   reset_change({"path_points":[],"scalars_x":null, "scalars_y":null});
+
+  //----------temperary!!!---------------
+  data_version = 0;
+  parsed_data = [{"path_points":[],"scalars_x":null, "scalars_y":null}];
 }
 
+function delete_point (elem) {
+  $(elem).parent().parent().remove();
+  reset_change({"path_points":[],"scalars_x":null, "scalars_y":null});
+
+  //----------temperary!!!---------------
+  data_version = 0;
+  parsed_data = [{"path_points":[],"scalars_x":null, "scalars_y":null}];
+}
 
 function update_costs () {
   document.getElementById("pos_cost_val").innerHTML = get_data()["costs"]["pos_cost"].toPrecision(3);
@@ -128,12 +140,6 @@ function update_costs () {
   document.getElementById("radius_cont_cost_val").innerHTML = get_data()["costs"]["radius_cont_cost"].toPrecision(3);
   document.getElementById("length_cost_val").innerHTML = get_data()["costs"]["length_cost"].toPrecision(3);
 }
-
-function delete_point (elem) {
-  $(elem).parent().parent().remove();
-  reset_change({"path_points":[],"scalars_x":null, "scalars_y":null});
-}
-
 
 function solve() {
   var points = get_points();
