@@ -100,7 +100,7 @@
             <div class="" style="text-align: center;">
                 <div class="btn-group">
                     <a class="btn btn-danger" onclick="solve()"><i class="glyphicon glyphicon-fire"></i> FIND</a>
-                    <a class="btn btn-danger" onclick="reset_version()"><i class="glyphicon glyphicon-repeat"></i></a>
+                    <a class="btn btn-danger" onclick="reset_data()"><i class="glyphicon glyphicon-repeat"></i></a>
                 </div>
             </div>
                 <div id="loader" class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
@@ -125,10 +125,10 @@
                         <tbody  id="points">
                             <tr class="point move-cursor" class="point">
                                 <!-- <td><i class="glyphicon glyphicon-minus" style="float: left; padding-top: 7px; color: #8c8c8c; margin-right: 10px"></i></td> -->   
-                                <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="draw_field()" value=1 ></td>
-                                <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="draw_field()" value=1 ></td>
-                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="draw_field()" value=90 ></td>
-                                <td class='switch'><label class="toggle"><input type="checkbox" value="true"><span class="handle"></span></label></td>
+                                <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="reset_data()" value=1 ></td>
+                                <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="reset_data()" value=1 ></td>
+                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset_data()" value=90 ></td>
+                                <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset_data()" value="true"><span class="handle"></span></label></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"
                                     onclick='delete_point(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
@@ -136,10 +136,10 @@
                             </tr>
                             <tr class="point move-cursor" class="point">
                                 <!-- <td><i class="glyphicon glyphicon-minus" style="float: left; padding-top: 7px; color: #8c8c8c; margin-right: 10px"></i></td> -->   
-                                <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="draw_field()" value=3 ></td>
-                                <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="draw_field()" value=7 ></td>
-                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="draw_field()" value=0 ></td>
-                                <td class='switch'><label class="toggle"><input type="checkbox" value="true"><span class="handle"></span></label></td>
+                                <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="reset_data()" value=3 ></td>
+                                <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="reset_data()" value=7 ></td>
+                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset_data()" value=0 ></td>
+                                <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset_data()" value="true"><span class="handle"></span></label></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"
                                     onclick='delete_point(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>

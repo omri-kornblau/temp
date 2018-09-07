@@ -278,8 +278,10 @@ def main(in_data):
     in_data = json.loads(in_data)
     
     #set up path_finder objects
-    for path_data in in_data:
+    for index, path_data in enumerate(in_data):
         path_points = [point(path_point["x"], path_point["y"], path_point["heading"]) for path_point in path_data["points"]]
+        if (index>0):
+            path_points[0].angle += math.pi
         paths.append(path_finder(
             path_data["params"],
             path_data["scalars_x"],

@@ -8,7 +8,7 @@ const default_data = [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}]
 
 var parsed_data = [default_data]; //stores all the data got from python 
 var data_version = 0; //stores current data version
-var new_solve = true;
+var new_solve = true; //whether there is data or not
 
 const point_size = 5;
 const path_size = 1;
@@ -51,7 +51,6 @@ function draw_points (points) {
     ctx.arc (points[i]["x"]*pixel_meters, points[i]["y"]*pixel_meters, point_size, 0, 2*Math.PI);
     ctx.fillStyle = color;
     ctx.fill();
-  //  ctx.stroke();
   }
 }
 
@@ -107,6 +106,13 @@ function new_version (push_item) {
   draw_field();
 }
 
+function reset_data () {
+  data_version = 0;
+  parsed_data = [default_data];
+  new_solve = true;
+  draw_field();
+}
+
 function reset_version() {
   data_version = 0;
   draw_field();
@@ -130,30 +136,25 @@ function undo_change () {
 
 function add_point () {
   $('#points').append("<tr class='point move-cursor' class='point'>"+
-    "<td class='x'><input class='form-control form-control-small' type='number' placeholder='X' oninput='draw_field()' value=1></td>"+
-    "<td class='y'><input class='form-control form-control-small' type='number' placeholder='Y' oninput='draw_field()' value=1></td>"+
-    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='draw_field()' value=0></td>"+
-    "<td class='switch'><label class='toggle'><input type='checkbox' value='true'><span class='handle'></span></label></td>"+
+    "<td class='x'><input class='form-control form-control-small' type='number' placeholder='X' oninput='reset_data()' value=1></td>"+
+    "<td class='y'><input class='form-control form-control-small' type='number' placeholder='Y' oninput='reset_data()' value=1></td>"+
+    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset_data()' value=0></td>"+
+    "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset_data()' value='true'><span class='handle'></span></label></td>"+
     "<td class='delete'><a class='btn btn-danger btn-small' onclick='delete_point(this)'>"+
     "<i class='glyphicon glyphicon-trash glyphicon-small'></i>"+
     "</a></td>"+
     "</tr>");
-  new_version(default_data);
-  new_solve = true;
-
+  
+  reset_data();
   //----------temporary!!!---------------
-  data_version = 0;
-  parsed_data = [default_data];
+  //data_version = 0;
+  //parsed_data = [default_data];
 }
 
 function delete_point (elem) {
   $(elem).parent().parent().remove();
-  new_version(default_data);
-  new_solve = true;
-
-  //----------temporary!!!---------------
-  data_version = 0;
-  parsed_data = [default_data];
+  
+  reset_data();
 }
 
 
@@ -171,15 +172,14 @@ function solve() {
   var data=[];
   var start = 0;
   var path_num = 0;
-
   for(var i = 0; i < points.length; i++)  {
     if (i == points.length - 1) {
-
+      console.log(path_num);
       data.push({
         "params": params, 
         "points":points.slice(start),
         "scalars_x":get_data()[path_num]["scalars_x"], 
-        "scalars_y":get_data()[path_num]["scalars_y"],});
+        "scalars_y":get_data()[path_num]["scalars_y"]});
       }
 
     if (points[i]["switch"]  == "true") {   
@@ -187,7 +187,7 @@ function solve() {
         "params": params, 
         "points":points.slice(start, i + 1),
         "scalars_x":get_data()[path_num]["scalars_x"], 
-        "scalars_y":get_data()[path_num]["scalars_y"],});
+        "scalars_y":get_data()[path_num]["scalars_y"]});
       start = i;
     
       if (!new_solve) {
