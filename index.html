@@ -96,16 +96,21 @@
             </div>
         </div>
 
-        <div class="col-md-2">
-            <div class="panel-body" style="text-align: center;">
-                    <a class="btn btn-danger" onclick="solve()"><i class="glyphicon glyphicon-fire"></i> SOLVE</a>
+        <div class="col-md-2" style="text-align: center;">
+            <div class="" style="text-align: center;">
+                <div class="btn-group">
+                    <a class="btn btn-danger" onclick="solve()"><i class="glyphicon glyphicon-fire"></i> FIND</a>
+                    <a class="btn btn-danger" onclick="reset_version()"><i class="glyphicon glyphicon-repeat"></i></a>
+                </div>
             </div>
+                <div id="loader" class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
         </div>
         
         <div class="col-md-5">
             <div class="panel panel-primary">
-              <div class="panel-heading">
-                <h3 class="panel-title">Points</h3>
+              <div class="panel-heading" style="text-align: center;">
+                <a class="panel-title">Points <!--    <a class="btn btn-link" style="color:white;"><i class="glyphicon glyphicon-plus-sign"></i></a> --></a>
+                
               </div>
               <div class="panel-body">
                 <div class="scrollpan scrollbar-primary">
@@ -115,7 +120,7 @@
                             <th>X</th>
                             <th>Y</th>
                             <th>Heading</th>
-                            <th>Reverse</th>
+                            <th>switch</th>
                         </thead>
                         <tbody  id="points">
                             <tr class="point move-cursor" class="point">
@@ -123,7 +128,7 @@
                                 <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="draw_field()" value=1 ></td>
                                 <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="draw_field()" value=1 ></td>
                                 <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="draw_field()" value=90 ></td>
-                                <td class='reverse'><label class="toggle"><input type="checkbox" value="true" checked><span class="handle"></span></label></td>
+                                <td class='switch'><label class="toggle"><input type="checkbox" value="true"><span class="handle"></span></label></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"
                                     onclick='delete_point(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
@@ -134,7 +139,7 @@
                                 <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="draw_field()" value=3 ></td>
                                 <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="draw_field()" value=7 ></td>
                                 <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="draw_field()" value=0 ></td>
-                                <td class='reverse'><label class="toggle"><input type="checkbox" value="true" checked><span class="handle"></span></label></td>
+                                <td class='switch'><label class="toggle"><input type="checkbox" value="true"><span class="handle"></span></label></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"
                                     onclick='delete_point(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
