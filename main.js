@@ -83,9 +83,7 @@ const server = http.createServer((req, res) => {
            	   scriptPath: 'Python',
            	   args: [input]
            	};
-
 	    }
-
             var pyshell = new PythonShell(python_script, options);
             pyshell.on('message', function (message) {
               // received a message sent from the Python script (a simple "print" statement)

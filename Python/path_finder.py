@@ -6,11 +6,10 @@ import sys
 
 class point(object):
     """docstring for dot"""
-    def __init__(self, x, y, angle, switch):
+    def __init__(self, x, y, angle):
         self.x = x
         self.y = y
         self.angle = angle
-        self.switch = switch
 
 class path_finder(object):
     """docstring for path_finder"""
@@ -35,20 +34,17 @@ class path_finder(object):
     TIME_QUANT = 2
     length_cost_val = 0
 
-    def __init__(self, params, scalars_x, scalars_y, new_solve, *args):
+    def __init__(self, params, scalars_x, scalars_y, *args):
         """
         each parameter shold be a tuple of (x, y, angle)
         """
         self.costs = {}
-        self.points = list(args).copy()
-        if self.points[0].switch == "true":
-           self.points[0].angle = math.pi
-        self.update_scalars(scalars_x, scalars_y, len(args), new_solve)
+        self.points = args
+        self.update_scalars(scalars_x, scalars_y, len(args))
         self.update_poly(params.get("poly", 3))
         self.update_costs_weights(params);
-        self.path_amount = len(self.scalars_x)
-        
-        
+        self.path_amount = len(self.points)-1
+
     def create_linear_scalar(self, param):
         scalars = np.zeros(len(self.points[:-1]) * (self.HIGHEST_POLYNOM + 1)).\
                      reshape(len(self.points[:-1]), (self.HIGHEST_POLYNOM + 1))
@@ -62,8 +58,8 @@ class path_finder(object):
             scalars[index][0] = b
         return scalars
 
-    def update_scalars(self, scalars_x, scalars_y, points_amount, new_solve):
-        if (new_solve=="false"):
+    def update_scalars(self, scalars_x, scalars_y, points_amount):
+        if (not scalars_x[0] == None):
             self.HIGHEST_POLYNOM = int(len(scalars_x)/(points_amount-1))-1
             self.scalars_x = np.array(scalars_x).reshape(points_amount-1, self.HIGHEST_POLYNOM+1)
             self.scalars_y = np.array(scalars_y).reshape(points_amount-1, self.HIGHEST_POLYNOM+1)
@@ -271,60 +267,29 @@ class path_finder(object):
         path_points = []
         for i in range(len(xs)):
             path_points.append({"x":xs[i], "y":ys[i]})
-        data = {"path_points": path_points, "costs": self.costs, "scalars_x": [list(np.ravel(self.scalars_x))], "scalars_y": [list(np.ravel(self.scalars_y))], "new_solve":"false"}
+        data = {"path_points": path_points, "costs": self.costs, "scalars_x": list(np.ravel(self.scalars_x)), "scalars_y": list(np.ravel(self.scalars_y))}
         return data
 
 def main(in_data):
     paths = []
+    out_data = []
 
     #get data from GUI
-    in_data     = json.loads(in_data)
-    points      = in_data["points"]
-    path_points = [point(path_point["x"], path_point["y"], path_point["heading"],path_point["switch"]) for path_point in points]
-    params      = in_data["params"]
-    scalars_x   = in_data["scalars_x"]
-    scalars_y   = in_data["scalars_y"]
-    new_solve   = in_data["new_solve"]
+    in_data = json.loads(in_data)
     
-    #set up path objects
-    start = 0
-    counter = 0
-    for index, p_point in enumerate(path_points):
-        
-        if index == len(path_points) - 1:
-
-            paths.append(path_finder(
-                params#[start:]
-                ,scalars_x[counter]
-                ,scalars_y[counter]
-                ,new_solve
-                ,*path_points[start:]))
-                
-            break
-
-        if p_point.switch == "true":
-            paths.append(path_finder(
-                params#[start:index+1]
-                ,scalars_x[counter]
-                ,scalars_y[counter]
-                ,new_solve
-                ,*path_points[start:index+1]))
-                
-            start = index
-            counter = counter + 1
-
-    #solve and keep results and data
-    paths[0].find_scalars()
-    out_data = paths[0].create_data()
-
-    for path in paths[1:]:
+    #set up path_finder objects
+    for path_data in in_data:
+        path_points = [point(path_point["x"], path_point["y"], path_point["heading"]) for path_point in path_data["points"]]
+        paths.append(path_finder(
+            path_data["params"],
+            path_data["scalars_x"],
+            path_data["scalars_y"],
+            *path_points))
+    
+    for path in paths:
         #the reason we are all here:
         path.find_scalars()
-
-        new_data = path.create_data()
-        out_data["path_points"] = out_data["path_points"] + new_data["path_points"]
-        out_data["scalars_x"].append(new_data["scalars_x"][0])
-        out_data["scalars_y"].append(new_data["scalars_y"][0])
+        out_data.append(path.create_data())
 
     #send the data to the GUI
     print (json.dumps(out_data))

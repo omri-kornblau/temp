@@ -4,11 +4,11 @@ var field_img;
 var field_canvas;
 var pixel_meters;
 
-const default_data = {"path_points":[],"scalars_x":[null,null], "scalars_y":[null,null], "new_solve":"true"}
+const default_data = [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}]
 
 var parsed_data = [default_data]; //stores all the data got from python 
 var data_version = 0; //stores current data version
-var scalars = [];
+var new_solve = true;
 
 const point_size = 5;
 const path_size = 1;
@@ -80,10 +80,21 @@ function draw_field() {
     ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
     ctx.shadowBlur = 0;
 
-    draw_path(get_data()["path_points"]);
-
+    for (var i = 0; i < get_data().length; i++) {
+      draw_path(get_data()[i]["path_points"]);
+    }
+    
     ctx.shadowBlur = 10;
     draw_points(get_points());
+}
+
+function update_costs () {
+  /* Missing here: 'for' loop to handle multiple paths costs*/
+  document.getElementById("pos_cost_val").innerHTML = get_data()[0]["costs"]["pos_cost"].toPrecision(3);
+  document.getElementById("angle_cost_val").innerHTML = get_data()[0]["costs"]["angle_cost"].toPrecision(3);
+  document.getElementById("radius_cost_val").innerHTML = get_data()[0]["costs"]["radius_cost"].toPrecision(3);
+  document.getElementById("radius_cont_cost_val").innerHTML = get_data()[0]["costs"]["radius_cont_cost"].toPrecision(3);
+  document.getElementById("length_cost_val").innerHTML = get_data()[0]["costs"]["length_cost"].toPrecision(3);
 }
 
 //delete future changes and push new version of paths
@@ -128,6 +139,7 @@ function add_point () {
     "</a></td>"+
     "</tr>");
   new_version(default_data);
+  new_solve = true;
 
   //----------temporary!!!---------------
   data_version = 0;
@@ -137,25 +149,17 @@ function add_point () {
 function delete_point (elem) {
   $(elem).parent().parent().remove();
   new_version(default_data);
+  new_solve = true;
 
   //----------temporary!!!---------------
   data_version = 0;
   parsed_data = [default_data];
 }
 
-function update_costs () {
-  //add 'for' loop for running on c
-  document.getElementById("pos_cost_val").innerHTML = get_data()["costs"]["pos_cost"].toPrecision(3);
-  document.getElementById("angle_cost_val").innerHTML = get_data()["costs"]["angle_cost"].toPrecision(3);
-  document.getElementById("radius_cost_val").innerHTML = get_data()["costs"]["radius_cost"].toPrecision(3);
-  document.getElementById("radius_cont_cost_val").innerHTML = get_data()["costs"]["radius_cont_cost"].toPrecision(3);
-  document.getElementById("length_cost_val").innerHTML = get_data()["costs"]["length_cost"].toPrecision(3);
-}
 
 function solve() {
   var points = get_points();
   var params = {};
-  //var params = get_params();
   
   params["poly"] = Number(document.getElementById("polynom").value);
   params["pos"] = Number(document.getElementById("position").value);
@@ -164,21 +168,42 @@ function solve() {
   params["radius_cont"] = Number(document.getElementById("radius_cont").value);
   params["length"] = Number(document.getElementById("length").value);
 
-  var data = {
-    "params": params, 
-    "points":points,
-    "scalars_x":get_data()["scalars_x"], 
-    "scalars_y":get_data()["scalars_y"],
-    "new_solve":get_data()["new_solve"]};
-  
+  var data=[];
+  var start = 0;
+  var path_num = 0;
+
+  for(var i = 0; i < points.length; i++)  {
+    if (i == points.length - 1) {
+
+      data.push({
+        "params": params, 
+        "points":points.slice(start),
+        "scalars_x":get_data()[path_num]["scalars_x"], 
+        "scalars_y":get_data()[path_num]["scalars_y"],});
+      }
+
+    if (points[i]["switch"]  == "true") {   
+      data.push({
+        "params": params, 
+        "points":points.slice(start, i + 1),
+        "scalars_x":get_data()[path_num]["scalars_x"], 
+        "scalars_y":get_data()[path_num]["scalars_y"],});
+      start = i;
+    
+      if (!new_solve) {
+        path_num++;
+      }  
+    }
+  }
+
   $("#loader").show(700);
   
   var data = JSON.stringify(data);
   $.post("http://127.0.0.1:3000/", {"data": data}, function(data, status) {
     $("#loader").hide(1000);
-    
+
+    new_solve = false;
     new_version(JSON.parse(data));
-    draw_field();
     update_costs();
   });
 }
