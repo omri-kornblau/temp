@@ -81,8 +81,8 @@ class path_finder(object):
         self.HIGHEST_POLYNOM = val
     
     def update_costs_weights (self, params):
-        self.POS_COST         = params.get("pos", 60000)*60000
-        self.ANGLE_COST       = params.get("angle", 6000)*6000
+        self.POS_COST         = params.get("pos", 60000)*600000
+        self.ANGLE_COST       = params.get("angle", 6000)*600000
         self.RADIUS_COST      = params.get("radius", 50)*50 
         self.RADIUS_CONT_COST = params.get("radius_cont", 10)*10
         self.LENGTH_COST      = params.get("length", 0)*0.00001
@@ -153,7 +153,7 @@ class path_finder(object):
             cost += (self.x(index, self.MAX) - self.points[index + 1].x) ** 2
             cost += (self.y(index, self.MIN) - self.points[index].y) ** 2
             cost += (self.y(index, self.MAX) - self.points[index + 1].y) ** 2
-        return cost/(amount_of_points * 4)
+        return cost/((amount_of_points+1) * 4)
 
     def get_angle_costs(self):
         cost = 0.
@@ -163,7 +163,7 @@ class path_finder(object):
             end_angle = math.atan2(self.dyds(index, self.MAX), self.dxds(index, self.MAX))
             cost += (self.delta_angle(start_angle, self.points[index].angle)) ** 2
             cost += (self.delta_angle(end_angle, self.points[index + 1].angle)) ** 2
-        return cost / (amount_of_points * 2)
+        return cost / ((amount_of_points+1) * 2)
     
     def get_radius_cost(self):
         cost = 0

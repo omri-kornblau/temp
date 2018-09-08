@@ -6,14 +6,22 @@ var pixel_meters;
 
 const default_data = [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}]
 
-var parsed_data = [default_data]; //stores all the data got from python 
+var parsed_data  = [default_data]; //stores all the data got from python 
 var data_version = 0; //stores current data version
-var new_solve = true; //whether there is data or not
+var new_solve    = true; //whether there is data or not
+
+var robot_width  = 0.6 //Meters 
+var robot_height = 0.8 //Meters
 
 const point_size = 5;
-const path_size = 1;
-const real_field_width = 16; //Meters
+const path_size  = 1;
+
+const real_field_width  = 16; //Meters
 const real_field_height = 8; //Meters
+
+function get_data () {
+  return(parsed_data[data_version]);
+}
 
 function get_points () {
   var points_elements = document.getElementsByClassName("point");
@@ -29,17 +37,87 @@ function get_points () {
   return points
 }
 
+function draw_robot () {
+  let previous = ctx.globalCompositeOperation;
+  ctx.globalCompositeOperation = "destination-over";
+
+  let translation = position.translation;
+
+  ctx.translate(translation.drawX, translation.drawY);
+  ctx.rotate(-heading);
+
+  let w = robotWidth * (width / fieldWidth);
+  let h = robotHeight * (height / fieldHeight);
+  ctx.fillStyle = color || "rgba(0, 0, 0, 0)";
+  ctx.fillRect(-h / 2, -w / 2, h, w);
+
+  ctx.rotate(heading);
+  ctx.translate(-translation.drawX, -translation.drawY);
+
+  ctx.globalCompositeOperation = previous;
+}
+
 function draw_path (points){
   ctx.beginPath();
-  ctx.moveTo(0,0);
-  for (var i = 0; i < points.length; i++){
+  
+  var inc = 2; 
+  for (var i = 0; i < points.length - inc; i+=inc){
+    var val = parseInt(i*100/points.length);
+    color = "rgba(200,200,200,1)";
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    
+    let x = points[i]["x"];
+    let y = points[i]["y"];
+    let x1 = points[i+inc]["x"];
+    let y1 = points[i+inc]["y"];
+
+    let alpha = Math.atan2((y1-y),(x1-x));
+    
+    x = x + Math.cos(alpha)*robot_height/2;
+    y = y + Math.sin(alpha)*robot_height/2;
+
+    let xr = Math.cos(alpha+Math.PI/2)*robot_width/2 + x;
+    let yr = Math.sin(alpha+Math.PI/2)*robot_width/2 + y;
+    
+    let xl = Math.cos(alpha-Math.PI/2)*robot_width/2 + x;
+    let yl = Math.sin(alpha-Math.PI/2)*robot_width/2 + y;
+
+    ctx.arc (xr*pixel_meters, yr*pixel_meters, path_size, 0, 2*Math.PI);
+    ctx.arc (xl*pixel_meters, yl*pixel_meters, path_size, 0, 2*Math.PI);
+    ctx.fill();
+    
+    color = "rgba(100,100,100,1)";
+    ctx.fillStyle = color;
+
+    x = points[i]["x"];
+    y = points[i]["y"];
+    
+    x = x + Math.cos(alpha+Math.PI)*robot_height/2;
+    y = y + Math.sin(alpha+Math.PI)*robot_height/2;
+
+    xr = Math.cos(alpha+Math.PI/2)*robot_width/2 + x;
+    yr = Math.sin(alpha+Math.PI/2)*robot_width/2 + y;
+    
+    xl = Math.cos(alpha-Math.PI/2)*robot_width/2 + x;
+    yl = Math.sin(alpha-Math.PI/2)*robot_width/2 + y;
+
+    ctx.beginPath();
+    ctx.arc (xr*pixel_meters, yr*pixel_meters, path_size, 0, 2*Math.PI);
+    ctx.arc (xl*pixel_meters, yl*pixel_meters, path_size, 0, 2*Math.PI);
+    ctx.fill();
+  }
+
+  for (var i = 0; i < points.length; i+=inc){
     var val = parseInt(i*100/points.length);
     color = "hsl("+val+",100%,60%)";
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc (points[i]["x"]*pixel_meters, points[i]["y"]*pixel_meters,path_size, 0, 2*Math.PI);
+    ctx.arc (points[i]["x"]*pixel_meters, points[i]["y"]*pixel_meters, path_size, 0, 2*Math.PI);
     ctx.fill();
   }
+
+
   ctx.closePath();
 }
 
@@ -69,10 +147,6 @@ function init_field() {
   };
   field_img.src = 'static/img/field_background.png';
   pixel_meters = field_canvas.width/real_field_width;
-}
-
-function get_data () {
-  return(parsed_data[data_version]);
 }
 
 function draw_field() {

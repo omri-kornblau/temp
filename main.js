@@ -4,11 +4,12 @@ const python_script = "path_finder.py";
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let mainWindow
+let mainWindow;
+var path = require('path');
 
 function createWindow () {
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: 1200, height: 800})
+  mainWindow = new BrowserWindow({width: 1200, height: 800, icon: path.join(__dirname, 'static/img/favicon64.png')})
 
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')
