@@ -7,9 +7,22 @@ import sys
 class point(object):
     """docstring for dot"""
     def __init__(self, x, y, angle):
+        magnitude = 10
         self.x = x
         self.y = y
         self.angle = angle
+        self.dx = math.cos(angle)*magnitude
+        self.dy = math.sin(angle)*magnitude
+        self.ddx = 0
+        self.ddy = 0
+
+    def distance (self, point):
+        return math.sqrt((self.x-point.x)**2 + (self.y-point.y)**2)
+
+    def update_v (self, point):
+        magnitude = 1.2*self.distance(point)
+        self.dx = math.cos(self.angle)*magnitude
+        self.dy = math.sin(self.angle)*magnitude
 
 class path_finder(object):
     """docstring for path_finder"""
@@ -20,7 +33,7 @@ class path_finder(object):
     LENGTH_COST = 0
 
     HIGHEST_POLYNOM = 5
-    MIN = -1.
+    MIN = 0.
     MAX = 1.
     RES = 0.2
     OPTIMIZE_FUNCTION = 'BFGS'
@@ -40,7 +53,7 @@ class path_finder(object):
         """
         self.costs = {}
         self.points = args
-        self.update_scalars(scalars_x, scalars_y, len(args))
+        self.update_scalars(scalars_x, scalars_y, len(args), params.get("poly", 3))
         self.update_poly(params.get("poly", 3))
         self.update_costs_weights(params);
         self.path_amount = len(self.points)-1
@@ -58,11 +71,52 @@ class path_finder(object):
             scalars[index][0] = b
         return scalars
 
-    def update_scalars(self, scalars_x, scalars_y, points_amount):
+    def create_quintic_scalar_x(self):
+        scalars = np.zeros(len(self.points[:-1]) * (self.HIGHEST_POLYNOM + 1)).\
+                     reshape(len(self.points[:-1]), (self.HIGHEST_POLYNOM + 1))
+
+        for index in range(len(self.points[:-1])):
+            self.points[index].update_v(self.points[index+1])
+            self.points[index+1].update_v(self.points[index])
+            p0 = self.points[index] 
+            p1 = self.points[index+1]
+
+            scalars[index][0] = p0.x
+            scalars[index][1] = p0.dx
+            scalars[index][2] = 0.5*p0.ddx
+            scalars[index][3] = -10*p0.x-6*p0.dx-1.5*p0.ddx+0.5*p1.ddx-4*p1.dx+10*p1.x
+            scalars[index][4] = 15*p0.x+8*p0.dx+1.5*p0.ddx-p1.ddx+7*p1.dx-15*p1.x
+            scalars[index][5] = -6*p0.x-3*p0.dx-0.5*p0.ddx+0.5*p1.ddx-3*p1.dx+6*p1.x;
+        return scalars
+
+    def create_quintic_scalar_y(self):
+        scalars = np.zeros(len(self.points[:-1]) * (self.HIGHEST_POLYNOM + 1)).\
+                     reshape(len(self.points[:-1]), (self.HIGHEST_POLYNOM + 1))
+
+        for index in range(len(self.points[:-1])):
+            self.points[index].update_v(self.points[index+1])
+            self.points[index+1].update_v(self.points[index])
+            p0 = self.points[index] 
+            p1 = self.points[index+1]
+
+            scalars[index][0] = p0.y
+            scalars[index][1] = p0.dy
+            scalars[index][2] = 0.5*p0.ddy
+            scalars[index][3] = -10*p0.y-6*p0.dy-1.5*p0.ddy+0.5*p1.ddy-4*p1.dy+10*p1.y
+            scalars[index][4] = 15*p0.y+8*p0.dy+1.5*p0.ddy-p1.ddy+7*p1.dy-15*p1.y
+            scalars[index][5] = -6*p0.y-3*p0.dy-0.5*p0.ddy+0.5*p1.ddy-3*p1.dy+6*p1.y;
+        return scalars
+
+    def update_scalars(self, scalars_x, scalars_y, points_amount, wanted_poly):
         if (not scalars_x[0] == None):
             self.HIGHEST_POLYNOM = int(len(scalars_x)/(points_amount-1))-1
             self.scalars_x = np.array(scalars_x).reshape(points_amount-1, self.HIGHEST_POLYNOM+1)
             self.scalars_y = np.array(scalars_y).reshape(points_amount-1, self.HIGHEST_POLYNOM+1)
+        
+        elif wanted_poly == 5:
+            self.scalars_x = self.create_quintic_scalar_x()
+            self.scalars_y = self.create_quintic_scalar_y()
+
         else:
             self.scalars_x = self.create_linear_scalar("x")
             self.scalars_y = self.create_linear_scalar("y")    
@@ -81,10 +135,10 @@ class path_finder(object):
         self.HIGHEST_POLYNOM = val
     
     def update_costs_weights (self, params):
-        self.POS_COST         = params.get("pos", 60000)*600000
-        self.ANGLE_COST       = params.get("angle", 6000)*600000
-        self.RADIUS_COST      = params.get("radius", 50)*50 
-        self.RADIUS_CONT_COST = params.get("radius_cont", 10)*10
+        self.POS_COST         = params.get("pos", 60000)*6000000000
+        self.ANGLE_COST       = params.get("angle", 6000)*6000000000
+        self.RADIUS_COST      = params.get("radius", 50)*100 
+        self.RADIUS_CONT_COST = params.get("radius_cont", 10)*1000
         self.LENGTH_COST      = params.get("length", 0)*0.00001
 
     def x(self, index, s):
@@ -290,6 +344,7 @@ def main(in_data):
     
     for path in paths:
         #the reason we are all here:
+    
         path.find_scalars()
         out_data.append(path.create_data())
 
