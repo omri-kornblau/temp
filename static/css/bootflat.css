@@ -2666,17 +2666,18 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
 .dropdown-submenu.pull-left .dropdown-menu {
   left: -100%;
   margin-left: 10px;
-          border-radius: 4px 0 4px 4px;
+  border-radius: 4px 0 4px 4px;
 
   -webkit-border-radius: 4px 0 4px 4px;
      -moz-border-radius: 4px 0 4px 4px;
 }
 
-/*# sourceMappingURL=bootflat.css.map */
-
 /*Path Finder Adds
 ----------------------- */
 
+.point:hover {
+  background-color: #dddddd;
+}
 .move-cursor {
   cursor: move;
 }
@@ -2729,37 +2730,35 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
   text-align: center;
 }
 
-#chart-container {
-  display: block;
-  width: 680px;
-  height: 680px; 
-  margin: 0px auto; 
-  background-size: contain;
-  border-radius: 10px;
-  -webkit-box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.5);
+@media (min-width: 768px) {
+  .canvas-wraper {
+    position: relative;
+    width: 680px;
+    height: 340px; 
+    margin: 0px auto; 
+    border-radius: 10px;
+    -webkit-box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.5);
+  }
 }
 
 @media (max-width: 768px) {
-#field {
-  width: 500px;
-  height: 250 px; 
-  margin: 0px auto; 
+  .canvas-wraper {
+    position: relative;
+    width: 500px;
+    height: 250px; 
+    margin: 0px auto; 
+    border-radius: 10px;
+    -webkit-box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.5);
+  }
+}
+.canvas-wraper canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
   background-size: contain;
   border-radius: 10px;
-  -webkit-box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.5);
-  }
 }
 
-@media (min-width: 768px) {
-#field {
-  width: 680px;
-  height: 340px; 
-  margin: 0px auto; 
-  background-size: contain;
-  border-radius: 10px;
-  -webkit-box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.5);
-  }
-}
 .scrollbar-primary::-webkit-scrollbar {
   border-radius: 5px;
   width: 8px;

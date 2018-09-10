@@ -25,7 +25,10 @@
         </div>
             </div>
             <div class="jumbotron-contents" style="text-align: center">
-               <canvas id="field" width="680" height="340"> </canvas> 
+                <div class="canvas-wraper">
+                    <canvas id="field_canvas" width="680" height="340"> </canvas> 
+                    <canvas id="points_canvas" width="680" height="340"> </canvas> 
+                </div>
             </div>
             <div class="jumbotron-footer" style="text-align: center"> 
                 <div class="btn-group">
@@ -96,14 +99,19 @@
             </div>
         </div>
 
-        <div class="col-md-2" style="text-align: center;">
-            <div class="" style="text-align: center;">
+        <div class="col-md-2" style="text-align: center">
+            <div class="solve-group"">
                 <div class="btn-group">
                     <a class="btn btn-danger" onclick="solve()"><i class="glyphicon glyphicon-fire"></i> FIND</a>
-                    <a class="btn btn-danger" onclick="reset_data()"><i class="glyphicon glyphicon-repeat"></i></a>
+                    <a class="btn btn-danger" onclick="reset_data(); draw_field();"><i class="glyphicon glyphicon-repeat"></i></a>
                 </div>
+
+                <div> 
+                    <h6 id="version-header"></h6>
+                </div>
+
             </div>
-                <div id="loader" class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+            <div id="loader" class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
         </div>
         
         <div class="col-md-5">
@@ -123,7 +131,7 @@
                             <th>switch</th>
                         </thead>
                         <tbody  id="points">
-                            <tr class="point move-cursor" class="point">
+                            <tr class="point move-cursor">
                                 <!-- <td><i class="glyphicon glyphicon-minus" style="float: left; padding-top: 7px; color: #8c8c8c; margin-right: 10px"></i></td> -->   
                                 <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="reset_data()" value=1 ></td>
                                 <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="reset_data()" value=1 ></td>

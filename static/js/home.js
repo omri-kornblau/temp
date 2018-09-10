@@ -1,12 +1,15 @@
 //var data = "";
-var ctx;
+var f_ctx;
+var p_ctx;
 var field_img;
 var field_canvas;
+var points_canvas;
 var pixel_meters;
 
 const default_data = [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}]
 
 var parsed_data  = [default_data]; //stores all the data got from python 
+var points;
 var data_version = 0; //stores current data version
 var new_solve    = true; //whether there is data or not
 
@@ -19,58 +22,127 @@ const path_size  = 1;
 const real_field_width  = 16; //Meters
 const real_field_height = 8; //Meters
 
+class Point {
+  constructor(elem) {
+    this.color = "rgba(255,255,255, 0.5)";
+    this.data = {};  
+    this.size = 5;
+    this.element = elem; 
+    this.getDataFromElement();
+  }
+
+  draw(px2m) {
+    p_ctx.beginPath();
+    p_ctx.arc (this.data["x"]*px2m, this.data["y"]*px2m, this.size, 0, 2*Math.PI);
+    p_ctx.fillStyle = this.color;
+    p_ctx.fill();
+  }
+
+  distance(point_x, point_y) {
+    return Math.sqrt((this.data["x"]-point_x)^2+(this.data["y"]-point_y)^2);
+  }
+
+  getDataFromElement () {
+    this.data["x"] = Number(this.element.querySelectorAll('.x > input')[0].value);
+    this.data["y"] = Number(this.element.querySelectorAll('.y > input')[0].value);
+    this.data["heading"] = Number(this.element.querySelectorAll('.heading > input')[0].value)*Math.PI/180;
+    this.data["switch"] = String(this.element.querySelectorAll('.switch > label > input')[0].checked);
+  }
+}
+
+class Points {
+  constructor () {
+    this.points = [];
+    this.amount = 0;
+    this.update();
+  }
+
+  update () {
+    this.points = [];
+    let points_elements = document.getElementsByClassName("point");
+    for (var i = 0; i < points_elements.length; i++) {
+      this.points.push(new Point(points_elements[i]));
+    }
+    this.amount = points_elements.length;
+
+    this.add_handlers();
+  }
+
+  getData () {
+    this.update();
+    let points = [];
+    for (var i = 0; i < this.amount; i++) {
+      points.push(this.points[i].data);
+    } 
+    return (points);
+  }
+
+  getPointByElement (elem) {
+    for (var i = 0; i < this.amount; i++) {
+      if (this.points[i].element == elem) {
+        return this.points[i]
+      }
+    }
+    return null
+  }
+
+  add_handlers () {
+    for (var i = 0; i < this.amount; i++)  {
+      this.points[i].element.addEventListener('mousemove', function () {point_hover(this, true);} );
+      this.points[i].element.addEventListener('click', function () {point_hover(this, true);} );
+      this.points[i].element.addEventListener('mouseout' , function () {point_hover(this, false);} );
+    }
+  }
+
+  draw () {
+    p_ctx.shadowColor = '#101010';
+    p_ctx.shadowBlur = 10;
+
+    p_ctx.clearRect(0, 0, points_canvas.width, points_canvas.height);
+
+    for (var i = 0; i < this.amount; i++){
+      this.points[i].draw(pixel_meters);
+    }
+  }
+}
+
+function point_hover (elem, hover) {
+  point = points.getPointByElement(elem);
+  if (hover) {
+    point.size = 6;
+    point.color = "#fff";
+  }
+  else {
+    point.size = 5;
+    point.color = "rgba(255,255,255, 0.5)";
+  }
+
+  points.draw();
+}
+
+function get_mouse_pos (canvas, evt) {
+  var rect = canvas.getBoundingClientRect();
+  return {x: evt.clientX - rect.left, y: evt.clientY - rect.top};
+}
+
 function get_data () {
   return(parsed_data[data_version]);
 }
 
-function get_points () {
-  var points_elements = document.getElementsByClassName("point");
-  var points = [];
-  for (var i = 0; i < points_elements.length; i++) {
-    var point = {};
-    point["x"] = Number(points_elements[i].querySelectorAll('.x > input')[0].value);
-    point["y"] = Number(points_elements[i].querySelectorAll('.y > input')[0].value);
-    point["heading"] = Number(points_elements[i].querySelectorAll('.heading > input')[0].value)*Math.PI/180;
-    point["switch"] = String(points_elements[i].querySelectorAll('.switch > label > input')[0].checked);
-    points.push(point);
-  }
-  return points
-}
-
-function draw_robot () {
-  let previous = ctx.globalCompositeOperation;
-  ctx.globalCompositeOperation = "destination-over";
-
-  let translation = position.translation;
-
-  ctx.translate(translation.drawX, translation.drawY);
-  ctx.rotate(-heading);
-
-  let w = robotWidth * (width / fieldWidth);
-  let h = robotHeight * (height / fieldHeight);
-  ctx.fillStyle = color || "rgba(0, 0, 0, 0)";
-  ctx.fillRect(-h / 2, -w / 2, h, w);
-
-  ctx.rotate(heading);
-  ctx.translate(-translation.drawX, -translation.drawY);
-
-  ctx.globalCompositeOperation = previous;
-}
-
-function draw_path (points){
-  ctx.beginPath();
+function draw_path (path_points){
+  f_ctx.beginPath();
   
   var inc = 2; 
-  for (var i = 0; i < points.length - inc; i+=inc){
-    var val = parseInt(i*100/points.length);
-    color = "rgba(200,200,200,1)";
-    ctx.fillStyle = color;
-    ctx.beginPath();
+  for (var i = 0; i < path_points.length - inc; i+=inc){
+    var val = parseInt(i*100/path_points.length);
+    color = "#bbbbbb";
+    f_ctx.fillStyle = color;
+    f_ctx.beginPath();
     
-    let x = points[i]["x"];
-    let y = points[i]["y"];
-    let x1 = points[i+inc]["x"];
-    let y1 = points[i+inc]["y"];
+    let x = path_points[i]["x"];
+    let y = path_points[i]["y"];
+    let x1 = path_points[i+inc]["x"];
+    let y1 = path_points[i+inc]["y"];
 
     let alpha = Math.atan2((y1-y),(x1-x));
     
@@ -83,15 +155,15 @@ function draw_path (points){
     let xl = Math.cos(alpha-Math.PI/2)*robot_width/2 + x;
     let yl = Math.sin(alpha-Math.PI/2)*robot_width/2 + y;
 
-    ctx.arc (xr*pixel_meters, yr*pixel_meters, path_size, 0, 2*Math.PI);
-    ctx.arc (xl*pixel_meters, yl*pixel_meters, path_size, 0, 2*Math.PI);
-    ctx.fill();
+    f_ctx.arc (xr*pixel_meters, yr*pixel_meters, path_size, 0, 2*Math.PI);
+    f_ctx.arc (xl*pixel_meters, yl*pixel_meters, path_size, 0, 2*Math.PI);
+    f_ctx.fill();
     
-    color = "rgba(100,100,100,1)";
-    ctx.fillStyle = color;
+    color = "#666666";
+    f_ctx.fillStyle = color;
 
-    x = points[i]["x"];
-    y = points[i]["y"];
+    x = path_points[i]["x"];
+    y = path_points[i]["y"];
     
     x = x + Math.cos(alpha+Math.PI)*robot_height/2;
     y = y + Math.sin(alpha+Math.PI)*robot_height/2;
@@ -102,63 +174,56 @@ function draw_path (points){
     xl = Math.cos(alpha-Math.PI/2)*robot_width/2 + x;
     yl = Math.sin(alpha-Math.PI/2)*robot_width/2 + y;
 
-    ctx.beginPath();
-    ctx.arc (xr*pixel_meters, yr*pixel_meters, path_size, 0, 2*Math.PI);
-    ctx.arc (xl*pixel_meters, yl*pixel_meters, path_size, 0, 2*Math.PI);
-    ctx.fill();
+    f_ctx.beginPath();
+    f_ctx.arc (xr*pixel_meters, yr*pixel_meters, path_size, 0, 2*Math.PI);
+    f_ctx.arc (xl*pixel_meters, yl*pixel_meters, path_size, 0, 2*Math.PI);
+    f_ctx.fill();
   }
 
-  for (var i = 0; i < points.length; i+=inc){
-    var val = parseInt(i*100/points.length);
+  for (var i = 0; i < path_points.length; i+=inc){
+    var val = parseInt(i*100/path_points.length);
     color = "hsl("+val+",100%,60%)";
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc (points[i]["x"]*pixel_meters, points[i]["y"]*pixel_meters, path_size, 0, 2*Math.PI);
-    ctx.fill();
+    f_ctx.fillStyle = color;
+    f_ctx.beginPath();
+    f_ctx.arc (path_points[i]["x"]*pixel_meters, path_points[i]["y"]*pixel_meters, path_size, 0, 2*Math.PI);
+    f_ctx.fill();
   }
 
-
-  ctx.closePath();
-}
-
-function draw_points (points) {
-  color = "#ffffff";
-
-  for (var i = 0; i < points.length; i++){
-    ctx.beginPath();
-    ctx.arc (points[i]["x"]*pixel_meters, points[i]["y"]*pixel_meters, point_size, 0, 2*Math.PI);
-    ctx.fillStyle = color;
-    ctx.fill();
-  }
+  f_ctx.closePath();
 }
 
 function init_field() {
   $("#loader").hide();
 
-  field_canvas = document.getElementById("field");
+  field_canvas = document.getElementById("field_canvas");
+  points_canvas = document.getElementById("points_canvas");
 
-  ctx = field_canvas.getContext('2d');
+  f_ctx = field_canvas.getContext('2d');
+  p_ctx = points_canvas.getContext('2d');
+  
   field_img = new Image;
+  points = new Points();
+
   field_img.onload = function() {
-    ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
-    ctx.shadowColor = '#101010';
-    ctx.shadowBlur = 10;
-    draw_points(get_points());
+    f_ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
+    points.draw();
   };
+
   field_img.src = 'static/img/field_background.png';
   pixel_meters = field_canvas.width/real_field_width;
 }
 
 function draw_field() {
-    ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
-    ctx.shadowBlur = 0;
+    f_ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
+    f_ctx.shadowBlur = 0;
 
     for (var i = 0; i < get_data().length; i++) {
       draw_path(get_data()[i]["path_points"]);
     }
     
-    ctx.shadowBlur = 10;
-    draw_points(get_points());
+    document.getElementById("version-header").innerHTML = data_version + " / " + (parsed_data.length-1)
+    f_ctx.shadowBlur = 10;
+    points.draw();
 }
 
 function update_costs () {
@@ -184,7 +249,8 @@ function reset_data () {
   data_version = 0;
   parsed_data = [default_data];
   new_solve = true;
-  draw_field();
+  points.update();
+  points.draw();
 }
 
 function reset_version() {
@@ -212,7 +278,7 @@ function add_point () {
   $('#points').append("<tr class='point move-cursor' class='point'>"+
     "<td class='x'><input class='form-control form-control-small' type='number' placeholder='X' oninput='reset_data()' value=1></td>"+
     "<td class='y'><input class='form-control form-control-small' type='number' placeholder='Y' oninput='reset_data()' value=1></td>"+
-    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset_data()' value=0></td>"+
+    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='?' oninput='reset_data()' value=0></td>"+
     "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset_data()' value='true'><span class='handle'></span></label></td>"+
     "<td class='delete'><a class='btn btn-danger btn-small' onclick='delete_point(this)'>"+
     "<i class='glyphicon glyphicon-trash glyphicon-small'></i>"+
@@ -220,20 +286,15 @@ function add_point () {
     "</tr>");
   
   reset_data();
-  //----------temporary!!!---------------
-  //data_version = 0;
-  //parsed_data = [default_data];
 }
 
 function delete_point (elem) {
   $(elem).parent().parent().remove();
-  
   reset_data();
 }
 
-
 function solve() {
-  var points = get_points();
+  points_data = points.getData();
   var params = {};
   
   params["poly"] = Number(document.getElementById("polynom").value);
@@ -246,20 +307,20 @@ function solve() {
   var data=[];
   var start = 0;
   var path_num = 0;
-  for(var i = 0; i < points.length; i++)  {
-    if (i == points.length - 1) {
+  for(var i = 0; i < points_data.length; i++)  {
+    if (i == points_data.length - 1) {
       console.log(path_num);
       data.push({
         "params": params, 
-        "points":points.slice(start),
+        "points":points_data.slice(start),
         "scalars_x":get_data()[path_num]["scalars_x"], 
         "scalars_y":get_data()[path_num]["scalars_y"]});
       }
 
-    if (points[i]["switch"]  == "true") {   
+    if (points_data[i]["switch"]  == "true") {   
       data.push({
         "params": params, 
-        "points":points.slice(start, i + 1),
+        "points":points_data.slice(start, i + 1),
         "scalars_x":get_data()[path_num]["scalars_x"], 
         "scalars_y":get_data()[path_num]["scalars_y"]});
       start = i;
