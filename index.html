@@ -7,7 +7,7 @@
         <link rel="icon" href="static/img/favicon.ico">
     </head>
 
-    <body onload='init_field()'>
+    <body onload='init_field()' style="background-color: #EEE">
     <div class="container">
         <div class="jumbotron">
             <div class="jumbotron-header" style="text-align: center">
@@ -25,12 +25,15 @@
         </div>
             </div>
             <div class="jumbotron-contents" style="text-align: center">
-               <canvas id="field" width="680" height="340"> </canvas> 
+                <div class="canvas-wraper">
+                    <canvas id="field_canvas" width="680" height="340"> </canvas> 
+                    <canvas id="points_canvas" width="680" height="340"> </canvas> 
+                </div>
             </div>
             <div class="jumbotron-footer" style="text-align: center"> 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-chevron-left"></i></button>
-                    <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-chevron-right"></i></button>
+                    <button type="button" class="btn btn-primary" onclick="undo_change()"><i class="glyphicon glyphicon-chevron-left"></i></button>
+                    <button type="button" class="btn btn-primary" onclick="redo_change()"><i class="glyphicon glyphicon-chevron-right"></i></button>
                     <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-home"></i></button>
                     <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-zoom-in"></i></button>
                     <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-zoom-out"></i></button>
@@ -60,34 +63,38 @@
                                 </thead> -->
                           		<tbody>
                                     <tr>
-            		                	<td>Polynom</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="polynom" value=3 ></td>
+                                        <td>Quintic Hermite</td>
+                                        <td><label class="toggle primary"><input id="method" type="checkbox" value="false"><span class="handle"></span></label></td>
+                                    </tr>
+                                    <tr>
+            		                	<td>Power</td>
+                                        <td><input class="form-control form-control-param" type='number' oninput="draw_field()" id="polynom" value=5></td>
             		                </tr>
+                                    <tr>
+                                        <td>Radius</td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="radius" value=1 ></td>
+                                        <td><span class="badge badge-default" id="radius_cost_val">cost</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Radius Cont</td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="radius_cont" value=0.1 ></td>
+                                        <td><span class="badge badge-default" id="radius_cont_cost_val">cost</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Length</td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="length" value=0 ></td>
+                                      <td><span class="badge badge-default" id="length_cost_val">cost</span></td>
+                                    </tr>
             		                <tr>
             		                	<td>Position</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="position" value=1 ></td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="position" value=1 ></td>
                                         <td><span class="badge badge-default" id="pos_cost_val">cost</span></td>
             		                </tr>
             		                <tr>
             		                	<td>Angle</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="angle" value=1 ></td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="angle" value=1 ></td>
                                         <td><span class="badge badge-default" id="angle_cost_val">cost</span></td>
             		                </tr>
-            		                <tr>
-            		                	<td>Radius</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="radius" value=1 ></td>
-            		                    <td><span class="badge badge-default" id="radius_cost_val">cost</span></td>
-                                    </tr>
-            		                <tr>
-            		                	<td>Radius Cont</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="radius_cont" value=1 ></td>
-            		                    <td><span class="badge badge-default" id="radius_cont_cost_val">cost</span></td>
-                                    </tr>
-            		                <tr>
-            		                	<td>Length</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="length" value=0 ></td>
-            		                  <td><span class="badge badge-default" id="length_cost_val">cost</span></td>
-                                    </tr>
                           		</tbody>
                           	</table>
                         </div>
@@ -96,16 +103,26 @@
             </div>
         </div>
 
-        <div class="col-md-2">
-            <div class="panel-body" style="text-align: center;">
-                    <a class="btn btn-danger" onclick="solve()"><i class="glyphicon glyphicon-fire"></i> SOLVE</a>
+        <div class="col-md-2" style="text-align: center">
+            <div class="solve-group"">
+                <div class="btn-group">
+                    <a class="btn btn-danger" onclick="solve()"><i class="glyphicon glyphicon-fire"></i> FIND</a>
+                    <a class="btn btn-danger" onclick="reset_data(); draw_field();"><i class="glyphicon glyphicon-repeat"></i></a>
+                </div>
+
+                <div> 
+                    <h6 id="version-header"></h6>
+                </div>
+
             </div>
+            <div id="loader" class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
         </div>
         
         <div class="col-md-5">
             <div class="panel panel-primary">
-              <div class="panel-heading">
-                <h3 class="panel-title">Points</h3>
+              <div class="panel-heading" style="text-align: center;">
+                <a class="panel-title">Points <!--    <a class="btn btn-link" style="color:white;"><i class="glyphicon glyphicon-plus-sign"></i></a> --></a>
+                
               </div>
               <div class="panel-body">
                 <div class="scrollpan scrollbar-primary">
@@ -115,15 +132,15 @@
                             <th>X</th>
                             <th>Y</th>
                             <th>Heading</th>
-                            <th>Reverse</th>
+                            <th>switch</th>
                         </thead>
                         <tbody  id="points">
-                            <tr class="point move-cursor" class="point">
+                            <tr class="point move-cursor">
                                 <!-- <td><i class="glyphicon glyphicon-minus" style="float: left; padding-top: 7px; color: #8c8c8c; margin-right: 10px"></i></td> -->   
-                                <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="draw_field()" value=1 ></td>
-                                <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="draw_field()" value=1 ></td>
-                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="draw_field()" value=90 ></td>
-                                <td class='reverse'><label class="toggle"><input type="checkbox" value="true" checked><span class="handle"></span></label></td>
+                                <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="reset_data()" value=1 ></td>
+                                <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="reset_data()" value=1 ></td>
+                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset_data()" value=90 ></td>
+                                <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset_data()" value="true"><span class="handle"></span></label></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"
                                     onclick='delete_point(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
@@ -131,10 +148,10 @@
                             </tr>
                             <tr class="point move-cursor" class="point">
                                 <!-- <td><i class="glyphicon glyphicon-minus" style="float: left; padding-top: 7px; color: #8c8c8c; margin-right: 10px"></i></td> -->   
-                                <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="draw_field()" value=3 ></td>
-                                <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="draw_field()" value=7 ></td>
-                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="draw_field()" value=0 ></td>
-                                <td class='reverse'><label class="toggle"><input type="checkbox" value="true" checked><span class="handle"></span></label></td>
+                                <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="reset_data()" value=2 ></td>
+                                <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="reset_data()" value=2 ></td>
+                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset_data()" value=0 ></td>
+                                <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset_data()" value="true"><span class="handle"></span></label></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"
                                     onclick='delete_point(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
