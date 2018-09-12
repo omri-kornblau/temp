@@ -1,23 +1,27 @@
 //var data = "";
 var f_ctx;
 var p_ctx;
+
 var field_img;
 var field_canvas;
+
 var points_canvas;
 var pixel_meters;
 
 const default_data = [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}]
 
 var parsed_data  = [default_data]; //stores all the data got from python 
-var points;
+
+var points; //stores 'Points' object
+
 var data_version = 0; //stores current data version
 var new_solve    = true; //whether there is data or not
 
 var robot_width  = 0.6 //Meters 
 var robot_height = 0.8 //Meters
 
-const point_size = 5;
-const path_size  = 1;
+const POINT_SIZE = 5;
+const PATH_SIZE  = 1;
 
 const real_field_width  = 16; //Meters
 const real_field_height = 8; //Meters
@@ -26,7 +30,7 @@ class Point {
   constructor(elem) {
     this.color = "rgba(255,255,255, 0.5)";
     this.data = {};  
-    this.size = 5;
+    this.size = POINT_SIZE;
     this.element = elem; 
     this.getDataFromElement();
   }
@@ -109,11 +113,11 @@ class Points {
 function point_hover (elem, hover) {
   point = points.getPointByElement(elem);
   if (hover) {
-    point.size = 6;
-    point.color = "#fff";
+    point.size = POINT_SIZE*1.2;
+    point.color = "rgba(255,255,255, 0.9)";
   }
   else {
-    point.size = 5;
+    point.size = POINT_SIZE;
     point.color = "rgba(255,255,255, 0.5)";
   }
 
@@ -155,8 +159,8 @@ function draw_path (path_points){
     let xl = Math.cos(alpha-Math.PI/2)*robot_width/2 + x;
     let yl = Math.sin(alpha-Math.PI/2)*robot_width/2 + y;
 
-    f_ctx.arc (xr*pixel_meters, yr*pixel_meters, path_size, 0, 2*Math.PI);
-    f_ctx.arc (xl*pixel_meters, yl*pixel_meters, path_size, 0, 2*Math.PI);
+    f_ctx.arc (xr*pixel_meters, yr*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
+    f_ctx.arc (xl*pixel_meters, yl*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
     f_ctx.fill();
     
     color = "#666666";
@@ -175,8 +179,8 @@ function draw_path (path_points){
     yl = Math.sin(alpha-Math.PI/2)*robot_width/2 + y;
 
     f_ctx.beginPath();
-    f_ctx.arc (xr*pixel_meters, yr*pixel_meters, path_size, 0, 2*Math.PI);
-    f_ctx.arc (xl*pixel_meters, yl*pixel_meters, path_size, 0, 2*Math.PI);
+    f_ctx.arc (xr*pixel_meters, yr*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
+    f_ctx.arc (xl*pixel_meters, yl*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
     f_ctx.fill();
   }
 
@@ -185,7 +189,7 @@ function draw_path (path_points){
     color = "hsl("+val+",100%,60%)";
     f_ctx.fillStyle = color;
     f_ctx.beginPath();
-    f_ctx.arc (path_points[i]["x"]*pixel_meters, path_points[i]["y"]*pixel_meters, path_size, 0, 2*Math.PI);
+    f_ctx.arc (path_points[i]["x"]*pixel_meters, path_points[i]["y"]*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
     f_ctx.fill();
   }
 
@@ -224,6 +228,8 @@ function draw_field() {
     document.getElementById("version-header").innerHTML = data_version + " / " + (parsed_data.length-1)
     f_ctx.shadowBlur = 10;
     points.draw();
+
+    update_forms();
 }
 
 function update_costs () {
@@ -233,6 +239,16 @@ function update_costs () {
   document.getElementById("radius_cost_val").innerHTML = get_data()[0]["costs"]["radius_cost"].toPrecision(3);
   document.getElementById("radius_cont_cost_val").innerHTML = get_data()[0]["costs"]["radius_cont_cost"].toPrecision(3);
   document.getElementById("length_cost_val").innerHTML = get_data()[0]["costs"]["length_cost"].toPrecision(3);
+}
+
+function update_forms () {
+  if (Number(document.getElementById("polynom").value) != 5) {
+      document.getElementById("method").disabled = true;
+      document.getElementById("method").checked = false;
+    }
+    else {
+      document.getElementById("method").disabled = false; 
+    }
 }
 
 //delete future changes and push new version of paths
@@ -250,7 +266,7 @@ function reset_data () {
   parsed_data = [default_data];
   new_solve = true;
   points.update();
-  points.draw();
+  draw_field();
 }
 
 function reset_version() {
@@ -276,8 +292,14 @@ function undo_change () {
 
 function add_point () {
   $('#points').append("<tr class='point move-cursor' class='point'>"+
-    "<td class='x'><input class='form-control form-control-small' type='number' placeholder='X' oninput='reset_data()' value=1></td>"+
-    "<td class='y'><input class='form-control form-control-small' type='number' placeholder='Y' oninput='reset_data()' value=1></td>"+
+    "<td class='x'><input class='form-control form-control-small' type='number' placeholder='X' oninput='reset_data()' value="+
+    //(points.getData()[points.amount-1]["x"]+1)+"></td>"+
+    1 +
+    "></td>" +
+    "<td class='y'><input class='form-control form-control-small' type='number' placeholder='Y' oninput='reset_data()' value="+
+    //(points.getData()[points.amount-1]["y"]+1)+
+    1 + 
+    "></td>"+
     "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='?' oninput='reset_data()' value=0></td>"+
     "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset_data()' value='true'><span class='handle'></span></label></td>"+
     "<td class='delete'><a class='btn btn-danger btn-small' onclick='delete_point(this)'>"+
@@ -303,7 +325,9 @@ function solve() {
   params["radius"] = Number(document.getElementById("radius").value);
   params["radius_cont"] = Number(document.getElementById("radius_cont").value);
   params["length"] = Number(document.getElementById("length").value);
+  params["method"] = document.getElementById("method").checked;
 
+  console.log (params["method"]);
   var data=[];
   var start = 0;
   var path_num = 0;

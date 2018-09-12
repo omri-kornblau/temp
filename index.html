@@ -63,34 +63,38 @@
                                 </thead> -->
                           		<tbody>
                                     <tr>
-            		                	<td>Polynom</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="polynom" value=5 ></td>
+                                        <td>Quintic Hermite</td>
+                                        <td><label class="toggle primary"><input id="method" type="checkbox" value="false"><span class="handle"></span></label></td>
+                                    </tr>
+                                    <tr>
+            		                	<td>Power</td>
+                                        <td><input class="form-control form-control-param" type='number' oninput="draw_field()" id="polynom" value=5></td>
             		                </tr>
+                                    <tr>
+                                        <td>Radius</td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="radius" value=1 ></td>
+                                        <td><span class="badge badge-default" id="radius_cost_val">cost</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Radius Cont</td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="radius_cont" value=0.1 ></td>
+                                        <td><span class="badge badge-default" id="radius_cont_cost_val">cost</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Length</td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="length" value=0 ></td>
+                                      <td><span class="badge badge-default" id="length_cost_val">cost</span></td>
+                                    </tr>
             		                <tr>
             		                	<td>Position</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="position" value=1 ></td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="position" value=1 ></td>
                                         <td><span class="badge badge-default" id="pos_cost_val">cost</span></td>
             		                </tr>
             		                <tr>
             		                	<td>Angle</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="angle" value=1 ></td>
+                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="angle" value=1 ></td>
                                         <td><span class="badge badge-default" id="angle_cost_val">cost</span></td>
             		                </tr>
-            		                <tr>
-            		                	<td>Radius</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="radius" value=1 ></td>
-            		                    <td><span class="badge badge-default" id="radius_cost_val">cost</span></td>
-                                    </tr>
-            		                <tr>
-            		                	<td>Radius Cont</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="radius_cont" value=1 ></td>
-            		                    <td><span class="badge badge-default" id="radius_cont_cost_val">cost</span></td>
-                                    </tr>
-            		                <tr>
-            		                	<td>Length</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="" id="length" value=0 ></td>
-            		                  <td><span class="badge badge-default" id="length_cost_val">cost</span></td>
-                                    </tr>
                           		</tbody>
                           	</table>
                         </div>
@@ -144,8 +148,8 @@
                             </tr>
                             <tr class="point move-cursor" class="point">
                                 <!-- <td><i class="glyphicon glyphicon-minus" style="float: left; padding-top: 7px; color: #8c8c8c; margin-right: 10px"></i></td> -->   
-                                <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="reset_data()" value=3 ></td>
-                                <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="reset_data()" value=7 ></td>
+                                <td class='x'><input class="form-control form-control-small" type='number' placeholder="X" oninput="reset_data()" value=2 ></td>
+                                <td class='y'><input class="form-control form-control-small" type='number' placeholder="Y" oninput="reset_data()" value=2 ></td>
                                 <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset_data()" value=0 ></td>
                                 <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset_data()" value="true"><span class="handle"></span></label></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"
