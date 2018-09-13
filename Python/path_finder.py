@@ -37,7 +37,7 @@ class path_finder(object):
     HIGHEST_POLYNOM = 5
     MIN = 0.
     MAX = 1.
-    RES = 0.1
+    RES = 0.05
     OPTIMIZE_FUNCTION = 'BFGS'
             #'Nelder-Mead' 'Powell' 'CG' 'BFGS' 'Newton-CG' 'L-BFGS-B' 'TNC' 'COBYLA' 'SLSQP' 'trust-constr' 'dogleg' 'trust-ncg' 'trust-exact' 'trust-krylov'
     RADIUS_SEG = 1
