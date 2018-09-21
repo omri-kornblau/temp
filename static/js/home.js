@@ -327,7 +327,6 @@ function solve() {
   params["length"] = Number(document.getElementById("length").value);
   params["method"] = document.getElementById("method").checked;
 
-  console.log (params["method"]);
   var data=[];
   var start = 0;
   var path_num = 0;
@@ -358,6 +357,9 @@ function solve() {
   $("#loader").show(700);
   
   var data = JSON.stringify(data);
+  
+  console.log(data)
+
   $.post("http://127.0.0.1:3000/", {"data": data}, function(data, status) {
     $("#loader").hide(1000);
 
