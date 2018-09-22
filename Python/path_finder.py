@@ -53,8 +53,9 @@ class path_finder(object):
     COST_TOLS = {"pos_cost": (10**(-2)) **2 , "angle_cost": (1*math.pi/180) **2, "radius_cost": 1, "radius_cont_cost": 100} 
 
     #trajectory
-    TIME_QUANT = 10 #ms
-    DEFAULT_SEG = 0.001
+    TIME_QUANT  = 3.0 #ms
+    DEFAULT_SEG = 0.0000001
+    END_S_THRES = 0.95
 
     def __init__(self, params, scalars_x, scalars_y, *args):
         """
@@ -98,6 +99,7 @@ class path_finder(object):
             scalars[index][3] = -10*p0.x-6*p0.dx-1.5*p0.ddx+0.5*p1.ddx-4*p1.dx+10*p1.x
             scalars[index][4] = 15*p0.x+8*p0.dx+1.5*p0.ddx-p1.ddx+7*p1.dx-15*p1.x
             scalars[index][5] = -6*p0.x-3*p0.dx-0.5*p0.ddx+0.5*p1.ddx-3*p1.dx+6*p1.x;
+
         return scalars
 
     def create_quintic_scalar_y(self):
@@ -116,6 +118,7 @@ class path_finder(object):
             scalars[index][3] = -10*p0.y-6*p0.dy-1.5*p0.ddy+0.5*p1.ddy-4*p1.dy+10*p1.y
             scalars[index][4] = 15*p0.y+8*p0.dy+1.5*p0.ddy-p1.ddy+7*p1.dy-15*p1.y
             scalars[index][5] = -6*p0.y-3*p0.dy-0.5*p0.ddy+0.5*p1.ddy-3*p1.dy+6*p1.y;
+
         return scalars
 
     def update_scalars(self, scalars_x, scalars_y, points_amount, wanted_poly):
@@ -200,7 +203,8 @@ class path_finder(object):
         d2x = self.d2xds2(index, s)
         dy = self.dyds(index, s)
         d2y = self.d2yds2(index, s)
-
+        if (((d2x * dy) - (d2y * dx)) == 0):
+            return 10**20
         return ((dx ** 2) + (dy ** 2))**1.5 / ((d2x * dy) - (d2y * dx))
     
     def delta_angle(self, angle1, angle2):
@@ -326,7 +330,6 @@ class path_finder(object):
         return self.costs
 
     def find_scalars(self):
-        #return opt.minimize(self.cost_function, np.ravel([self.scalars_x, self.scalars_y]), method = self.OPTIMIZE_FUNCTION, cost_tol = self.COST_TOLS, get_costs = self.get_costs)
         if (self.quintic):
             args = []
             for point in self.points:
@@ -335,7 +338,6 @@ class path_finder(object):
                 args.append(point.magnitude_factor)
 
             opt.minimize(self.quintic_cost_function, args, method = self.OPTIMIZE_FUNCTION)
-        
         else:
             opt.minimize(self.cost_function, np.ravel([self.scalars_x, self.scalars_y]), method = self.OPTIMIZE_FUNCTION)
 
@@ -349,11 +351,25 @@ class path_finder(object):
         #run forward
         for path in range(self.path_amount):
             s = self.MIN
+            ds_index = 1   
+            start_ds = []
+
             while s <= self.MAX:
-                print("*************forward***********")
-#######################################Testing#################################
-                min_vel = min(abs(xpoints[i].left_vel), abs(xpoints[i].right_vel))
-                ds = max(min_vel * (self.TIME_QUANT/1000) / (self.dxds(path, s) ** 2 + self.dyds(path, s) ** 2)**0.5, self.DEFAULT_SEG) # add max
+                #if (s < (self.END_S_THRES)):
+                min_vel = abs(xpoints[i].left_vel+xpoints[i].right_vel)/2
+                new_ds = (min_vel*(self.TIME_QUANT/1000)) / ((self.dxds(path, s) ** 2 + self.dyds(path, s) ** 2)**0.5)
+
+                ds = max(new_ds, self.DEFAULT_SEG)
+                    
+                if ds > 0.01:
+                    ds = 0.01
+
+                    #if (s < (1-self.END_S_THRES)):
+                    #    start_ds.append(ds)
+
+                # else:
+                #     ds = start_ds[-ds_index]
+                #     ds_index += 1
                 
                 if (s+ds <= 1):
                     xpoints.append(trajectory_point(self.x(path, s+ds), self.y(path, s+ds)))
@@ -364,26 +380,13 @@ class path_finder(object):
 
                 angle_0 = math.atan2(self.dyds(path, s), self.dxds(path, s))
                 angle_1 = math.atan2(self.dyds(path, s+ds), self.dxds(path, s+ds))
-                angle_diff = angle_1 - angle_0
-                
-                xpoints[i+1].update_distances(xpoints[i], angle_diff, width)
+
+                xpoints[i+1].update_distances(xpoints[i],angle_0, angle_1, width)
 
                 xpoints[i+1].update_velocities_forward(xpoints[i], max_vel)
 
                 dt_left, dt_right = xpoints[i+1].update_times_forward(xpoints[i]) #xpoint[i-1].vel+xpoint[i-1].max_acc*
                 
-                print ("i:", i)
-                print("s", s)
-                print ("min_vel", min_vel)
-                print ("ds", ds)                
-                print ("dt_right", dt_right)
-                print ("dt_left", dt_left)
-
-                # if (dt_left < dt_right):
-                #     xpoints[i+1].update_point(xpoints[i], dt_left/dt_right, "right", max_acc)
-                # else:
-                #     xpoints[i+1].update_point(xpoints[i], dt_right/dt_left, "left", max_acc)
-
                 if (dt_left < dt_right):
                     xpoints[i+1].update_point(xpoints[i], dt_left, dt_right, "right", max_acc, max_vel)
                 else:
@@ -392,40 +395,27 @@ class path_finder(object):
                 i += 1
                 s += ds
 
+        sec_point_time = xpoints[0].time
         xpoints[-1].reset(max_acc)
-      
-        #run backwards
-        for path in range(self.path_amount-1, 1, -1):
-            s = self.MAX
-            while (s >= self.MIN) and (i > 1):
-                print("*************back**************")
-                min_vel = min(abs(xpoints[i].left_vel), abs(xpoints[i].right_vel))
-                ds = max(min_vel * (self.TIME_QUANT/1000) / math.sqrt(self.dxds(path, s) ** 2 + self.dyds(path, s) ** 2), self.DEFAULT_SEG) # add max
 
-                angle_0 = math.atan2(self.dyds(path, s), self.dxds(path, s))
-                angle_1 = math.atan2(self.dyds(path, s-ds), self.dxds(path, s-ds))
-                angle_diff = angle_1 - angle_0
+        while (i > 0): 
+            xpoints[i-1].update_velocities_backward(xpoints[i], max_vel)
 
-                #xpoints[i-1].update_distances(xpoints[i], angle_diff, width)
+            dt_left, dt_right = xpoints[i-1].update_times_backward(xpoints[i]) #xpoint[i-1].vel+xpoint[i-1].max_acc*
+            
+            if (dt_left < dt_right):
+                xpoints[i-1].update_point_backward(xpoints[i], dt_left, dt_right, "right", max_acc, max_vel)
+            else:
+                xpoints[i-1].update_point_backward(xpoints[i], dt_left, dt_right, "left", max_acc, max_vel)
+            
+            i -= 1
 
-                xpoints[i-1].update_velocities_backward(xpoints[i], max_vel)
+        sec_point_time_after = xpoints[0].time
+        dt = sec_point_time - sec_point_time_after
+        
+        for xpoint in xpoints:
+            xpoint.time += dt
 
-                dt_left, dt_right = xpoints[i-1].update_times_backward(xpoints[i]) #xpoint[i-1].vel+xpoint[i-1].max_acc*
-                
-                if (dt_left < dt_right):
-                    xpoints[i-1].update_point(xpoints[i], dt_left, dt_right, "right", max_acc, max_vel)
-                else:
-                    xpoints[i-1].update_point(xpoints[i], dt_left, dt_right, "left", max_acc, max_vel)
-
-                print ("i:", i)
-                print("s", s)
-                print ("min_vel", min_vel)
-                print ("ds", ds)                
-                print ("dt_left", dt_left)
-                print ("dt_right", dt_right)
-
-                i -= 1
-                s -= ds
         return xpoints
     def draw_graph(self, res):
         xs = []
@@ -453,13 +443,15 @@ def main(in_data):
 ##########################################Testing#################################
     #in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},"points":[{"x":1,"y":1,"heading":0,"switch":"false"},{"x":5,"y":5,"heading":0,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
     #in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},"points":[{"x":1,"y":1,"heading":1.5707963267948966,"switch":"false"},{"x":3,"y":3,"heading":0,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
-    in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},
-     	"points":[{"x":1,"y":1,"heading":0,"switch":"false"},
-     	{"x":5,"y":1,"heading":0,"switch":"false"},
-     	{"x":5,"y":5,"heading":1.1517,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
+    #in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},"points":[{"x":0,"y":1,"heading":0,"switch":"false"},{"x":3,"y":1,"heading":0,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
+    #in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},
+    #   "points":[{"x":1,"y":1,"heading":0,"switch":"false"},
+    #   {"x":5,"y":1,"heading":0,"switch":"false"},
+    #   {"x":5,"y":5,"heading":1.1517,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
     #get data from GUI
 ##########################################Testing#################################
-    #in_data = json.loads(in_data)
+    
+    in_data = json.loads(in_data)
     
     #set up path_finder objects
     for index, path_data in enumerate(in_data):
@@ -479,29 +471,52 @@ def main(in_data):
 
     #send the data to the GUI
 ##########################################Testing#################################    
-#    print (json.dumps(out_data))
+    print (json.dumps(out_data))
     for path in paths:
-        xpoints = path.find_trajectory(1, 3, 0.6)
+        xpoints = path.find_trajectory(3.5, 8.0, 0.9)
 
     left_vel = []
     right_vel = []
+    left_acc = []
+    right_acc = []
     times = []
-    for pointa in xpoints:
-        left_vel.append(pointa.left_vel)
-        right_vel.append(pointa.right_vel)
-        times.append(pointa.time)
+    dts = []
 
-    traj_p = plt.subplot (2, 1, 1)
-    path_p = plt.subplot (2, 1, 2)
+    for i in range(len(xpoints)):
+        left_vel.append(xpoints[i].left_vel)
+        right_vel.append(xpoints[i].right_vel)
+        
+        if (i < len(xpoints) -1):
+            left_acc.append((xpoints[i+1].left_vel-xpoints[i].left_vel)/(xpoints[i+1].time-xpoints[i].time))
+            right_acc.append((xpoints[i+1].right_vel-xpoints[i].right_vel)/(xpoints[i+1].time-xpoints[i].time))
+            dts.append(xpoints[i+1].time-xpoints[i].time)
+        
+        times.append(xpoints[i].time)
+
+    traj_p = plt.subplot (3, 1, 1)
+    acc_p  = plt.subplot (3, 1, 2)
+    path_p = plt.subplot (3, 1, 3)
+    
     path_p.axis('equal')
     
-    path_p.plot(paths[0].draw_graph(0.01)[0], paths[0].draw_graph(0.01)[1])
-    path_p.set(xlabel='X', ylabel='Y')
+    indicies = range(len(xpoints)-2) 
+
+    acc_p .plot(times[:-1], right_acc)
+    acc_p .plot(times[:-1], left_acc)
+    #acc_p.plot(times[:-1], dts)
+    acc_p.set(xlabel='points', ylabel='dts')
+    acc_p.grid()
 
     traj_p.plot(times, right_vel)
     traj_p.plot(times, left_vel)
     traj_p.set(xlabel='time', ylabel='Velocity')
-    plt.show()
+    traj_p.grid()
 
+    path_p.plot(paths[0].draw_graph(0.01)[0], paths[0].draw_graph(0.01)[1])
+    path_p.set(xlabel='X', ylabel='Y')
+    path_p.grid()
+
+    plt.show()
+    plt.close('all')
 if __name__ == "__main__":
     main(sys.argv[1])
