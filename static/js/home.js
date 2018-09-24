@@ -292,15 +292,15 @@ function undo_change () {
 
 function add_point () {
   $('#points').append("<tr class='point move-cursor' class='point'>"+
-    "<td class='x'><input class='form-control form-control-small' type='number' placeholder='X' oninput='reset_data()' value="+
-    //(points.getData()[points.amount-1]["x"]+1)+"></td>"+
-    1 +
+    "<td class='x'><input class='form-control form-control-small' type='number' step='0.1' placeholder='X' oninput='reset_data()' value="+
+    (points.getData()[points.amount-1]["x"]+1)+"></td>"+
+    //1 +
     "></td>" +
-    "<td class='y'><input class='form-control form-control-small' type='number' placeholder='Y' oninput='reset_data()' value="+
-    //(points.getData()[points.amount-1]["y"]+1)+
-    1 + 
+    "<td class='y'><input class='form-control form-control-small' type='number' step='0.1' placeholder='Y' oninput='reset_data()' value="+
+    (points.getData()[points.amount-1]["y"]+1)+
+    //1 + 
     "></td>"+
-    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='?' oninput='reset_data()' value=0></td>"+
+    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset_data()' value=0></td>"+
     "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset_data()' value='true'><span class='handle'></span></label></td>"+
     "<td class='delete'><a class='btn btn-danger btn-small' onclick='delete_point(this)'>"+
     "<i class='glyphicon glyphicon-trash glyphicon-small'></i>"+
@@ -311,8 +311,10 @@ function add_point () {
 }
 
 function delete_point (elem) {
-  $(elem).parent().parent().remove();
-  reset_data();
+  if (points.amount > 1) {
+    $(elem).parent().parent().remove();
+    reset_data();
+  }
 }
 
 function solve() {

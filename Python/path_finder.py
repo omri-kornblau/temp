@@ -1,11 +1,13 @@
+from __future__ import division
+from matplotlib import pyplot as plt
+from scipy import optimize as opt
+from velocity_finder import trajectory_point
+
 import numpy as np
 import math
 import json
 import sys
 
-from matplotlib import pyplot as plt
-from scipy import optimize as opt
-from velocity_finder import trajectory_point
 
 class point(object):
     """docstring for dot"""
@@ -41,7 +43,8 @@ class path_finder(object):
     MIN = 0.
     MAX = 1.
     RES = 0.1
-    OPTIMIZE_FUNCTION = 'BFGS'
+    OPTIMIZE_FUNCTION = 'BFGS' #Need to make solver test..
+    QUINTIC_OPTIMIZE_FUNCTION = 'L-BFGS-B'
     POWERS = []
             #'Nelder-Mead' 'Powell' 'CG' 'BFGS' 'Newton-CG' 'L-BFGS-B' 'TNC' 'COBYLA' 'SLSQP' 'trust-constr' 'dogleg' 'trust-ncg' 'trust-exact' 'trust-krylov'
     length_cost_val = 0
@@ -53,8 +56,8 @@ class path_finder(object):
     COST_TOLS = {"pos_cost": (10**(-2)) **2 , "angle_cost": (1*math.pi/180) **2, "radius_cost": 1, "radius_cont_cost": 100} 
 
     #trajectory
-    TIME_QUANT  = 3.0 #ms
-    DEFAULT_SEG = 0.0000001
+    TIME_QUANT  = 2.0 #ms
+    DEFAULT_SEG = 0.0001
     END_S_THRES = 0.95
 
     def __init__(self, params, scalars_x, scalars_y, *args):
@@ -153,7 +156,7 @@ class path_finder(object):
         self.POS_COST         = params.get("pos", 1)*6000000000
         self.ANGLE_COST       = params.get("angle", 1)*6000000000
         self.RADIUS_COST      = params.get("radius", 1)*100
-        self.RADIUS_CONT_COST = params.get("radius_cont", 1)*100
+        self.RADIUS_CONT_COST = params.get("radius_cont", 1)*100000
         self.LENGTH_COST      = params.get("length", 0)*0.00001
 
     def x(self, index, s):
@@ -204,7 +207,7 @@ class path_finder(object):
         dy = self.dyds(index, s)
         d2y = self.d2yds2(index, s)
         if (((d2x * dy) - (d2y * dx)) == 0):
-            return 10**20
+            return (float(10**5))
         return ((dx ** 2) + (dy ** 2))**1.5 / ((d2x * dy) - (d2y * dx))
     
     def delta_angle(self, angle1, angle2):
@@ -241,8 +244,6 @@ class path_finder(object):
         for index in range(self.path_amount):
             #for s in ( np.cbrt(((np.arange(self.MIN, self.MAX + self.RES,  self.RES))-0.5)*2)*0.5 + 0.5):
             for s in np.arange(self.MIN, self.MAX + self.RES,  self.RES):
-                #cost += (1/self.radius(index ,s)) ** 4
-                
                 dx = self.dxds(index, s)
                 d2x = self.d2xds2(index, s)
                 dy = self.dyds(index, s)
@@ -267,10 +268,11 @@ class path_finder(object):
             counter = 0
 
         for index in range(self.path_amount - 1):
-            rad = self.radius(index, self.MAX)
-            last_rad = self.radius(index+1, self.MIN)
-            
-            cost += (last_rad-rad) ** 2
+            #rad = self.radius(index, self.MAX)
+            #last_rad = self.radius(index+1, self.MIN)
+            curv = math.sqrt(self.d2xds2(index, self.MAX)**2+self.d2yds2(index, self.MAX)**2)
+            last_curv = math.sqrt(self.d2xds2(index+1, self.MIN)**2+self.d2yds2(index+1, self.MIN)**2)
+            cost += (last_curv-curv) ** 2
             counter += 1
         return cost/counter
 
@@ -304,8 +306,8 @@ class path_finder(object):
     def quintic_cost_function(self, args):
         
         for index, point in enumerate(self.points):
-            point.ddx = args[index*2]
-            point.ddy = args[index*2+1]
+            point.ddx = args[index*3]
+            point.ddy = args[index*3+1]
             point.magnitude_factor = args[index*3+2]
         
         self.scalars_x = self.create_quintic_scalar_x()
@@ -337,7 +339,7 @@ class path_finder(object):
                 args.append(point.ddy)
                 args.append(point.magnitude_factor)
 
-            opt.minimize(self.quintic_cost_function, args, method = self.OPTIMIZE_FUNCTION)
+            opt.minimize(self.quintic_cost_function, args, method = self.QUINTIC_OPTIMIZE_FUNCTION)
         else:
             opt.minimize(self.cost_function, np.ravel([self.scalars_x, self.scalars_y]), method = self.OPTIMIZE_FUNCTION)
 
@@ -347,17 +349,19 @@ class path_finder(object):
         xpoints[0].reset(max_acc)
 
         i = 0
+        s = self.MAX
 
         #run forward
         for path in range(self.path_amount):
-            s = self.MIN
+            s -= self.MAX
+            
             ds_index = 1   
             start_ds = []
 
-            while s <= self.MAX:
+            while s < self.MAX:
                 #if (s < (self.END_S_THRES)):
                 min_vel = abs(xpoints[i].left_vel+xpoints[i].right_vel)/2
-                new_ds = (min_vel*(self.TIME_QUANT/1000)) / ((self.dxds(path, s) ** 2 + self.dyds(path, s) ** 2)**0.5)
+                new_ds = (min_vel*(self.TIME_QUANT/1000.0)) / ((self.dxds(path, s) ** 2 + self.dyds(path, s) ** 2)**0.5)
 
                 ds = max(new_ds, self.DEFAULT_SEG)
                     
@@ -370,16 +374,16 @@ class path_finder(object):
                 # else:
                 #     ds = start_ds[-ds_index]
                 #     ds_index += 1
+                angle_0 = math.atan2(self.dyds(path, s), self.dxds(path, s))
                 
-                if (s+ds <= 1):
+                if (s+ds < self.MAX):
                     xpoints.append(trajectory_point(self.x(path, s+ds), self.y(path, s+ds)))
+                    angle_1 = math.atan2(self.dyds(path, s+ds), self.dxds(path, s+ds))
                 elif (path + 1 < self.path_amount):
-                    xpoints.append(trajectory_point(self.x(path+1, s+ds-1), self.y(path+1, s+ds-1)))
+                    xpoints.append(trajectory_point(self.x(path+1, s+ds-self.MAX), self.y(path+1, s+ds-self.MAX)))
+                    angle_1 = math.atan2(self.dyds(path+1, s+ds-self.MAX), self.dxds(path+1, s+ds-self.MAX))
                 else:
                     break
-
-                angle_0 = math.atan2(self.dyds(path, s), self.dxds(path, s))
-                angle_1 = math.atan2(self.dyds(path, s+ds), self.dxds(path, s+ds))
 
                 xpoints[i+1].update_distances(xpoints[i],angle_0, angle_1, width)
 
@@ -398,8 +402,8 @@ class path_finder(object):
         sec_point_time = xpoints[0].time
         xpoints[-1].reset(max_acc)
 
-        while (i > 0): 
-            xpoints[i-1].update_velocities_backward(xpoints[i], max_vel)
+        while (False):#i > 0): 
+            xpoints[i-1].update_velocities_backward(xpoints[i])
 
             dt_left, dt_right = xpoints[i-1].update_times_backward(xpoints[i]) #xpoint[i-1].vel+xpoint[i-1].max_acc*
             
@@ -444,10 +448,10 @@ def main(in_data):
     #in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},"points":[{"x":1,"y":1,"heading":0,"switch":"false"},{"x":5,"y":5,"heading":0,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
     #in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},"points":[{"x":1,"y":1,"heading":1.5707963267948966,"switch":"false"},{"x":3,"y":3,"heading":0,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
     #in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},"points":[{"x":0,"y":1,"heading":0,"switch":"false"},{"x":3,"y":1,"heading":0,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
-    #in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},
-    #   "points":[{"x":1,"y":1,"heading":0,"switch":"false"},
-    #   {"x":5,"y":1,"heading":0,"switch":"false"},
-    #   {"x":5,"y":5,"heading":1.1517,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
+    # in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},
+    #    "points":[{"x":1,"y":1,"heading":0,"switch":"false"},
+    #    {"x":6,"y":2,"heading":0,"switch":"false"},
+    #    {"x":11,"y":1,"heading":0,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
     #get data from GUI
 ##########################################Testing#################################
     
@@ -469,23 +473,25 @@ def main(in_data):
         path.find_scalars()
         out_data.append(path.create_data())
 
-    #send the data to the GUI
-##########################################Testing#################################    
     print (json.dumps(out_data))
     for path in paths:
-        xpoints = path.find_trajectory(3.5, 8.0, 0.9)
+        xpoints = path.find_trajectory(3.5, 8.0, 0.8)
 
     left_vel = []
     right_vel = []
     left_acc = []
     right_acc = []
     times = []
+    rules = []
+    rules_l = []
     dts = []
 
     for i in range(len(xpoints)):
         left_vel.append(xpoints[i].left_vel)
         right_vel.append(xpoints[i].right_vel)
-        
+        if (i>0):
+            rules.append(xpoints[i].right_dist)
+            rules_l.append(xpoints[i].left_dist)
         if (i < len(xpoints) -1):
             left_acc.append((xpoints[i+1].left_vel-xpoints[i].left_vel)/(xpoints[i+1].time-xpoints[i].time))
             right_acc.append((xpoints[i+1].right_vel-xpoints[i].right_vel)/(xpoints[i+1].time-xpoints[i].time))
@@ -493,10 +499,10 @@ def main(in_data):
         
         times.append(xpoints[i].time)
 
-    traj_p = plt.subplot (3, 1, 1)
-    acc_p  = plt.subplot (3, 1, 2)
-    path_p = plt.subplot (3, 1, 3)
-    
+    traj_p = plt.subplot (4, 1, 1)
+    acc_p  = plt.subplot (4, 1, 2)
+    path_p = plt.subplot (4, 1, 3)
+    rule_p = plt.subplot (4, 1, 4)
     path_p.axis('equal')
     
     indicies = range(len(xpoints)-2) 
@@ -504,7 +510,7 @@ def main(in_data):
     acc_p .plot(times[:-1], right_acc)
     acc_p .plot(times[:-1], left_acc)
     #acc_p.plot(times[:-1], dts)
-    acc_p.set(xlabel='points', ylabel='dts')
+    acc_p.set(xlabel='points', ylabel='Acceleration')
     acc_p.grid()
 
     traj_p.plot(times, right_vel)
@@ -512,11 +518,17 @@ def main(in_data):
     traj_p.set(xlabel='time', ylabel='Velocity')
     traj_p.grid()
 
-    path_p.plot(paths[0].draw_graph(0.01)[0], paths[0].draw_graph(0.01)[1])
+    #path_p.scatter(paths[0].draw_graph(0.001)[0], paths[0].draw_graph(0.001)[1], s=3)
+    path_p.plot(paths[0].draw_graph(0.0001)[0], paths[0].draw_graph(0.0001)[1])
     path_p.set(xlabel='X', ylabel='Y')
     path_p.grid()
 
+    rule_p.plot(times[1:], rules)
+    rule_p.plot(times[1:], rules_l)
+
+    plt.suptitle('Trajectory', fontsize=16)
     plt.show()
     plt.close('all')
+
 if __name__ == "__main__":
     main(sys.argv[1])
