@@ -8,7 +8,6 @@ import math
 import json
 import sys
 
-
 class point(object):
     """docstring for dot"""
     def __init__(self, x, y, angle):
@@ -42,7 +41,7 @@ class path_finder(object):
     HIGHEST_POLYNOM = 5
     MIN = 0.
     MAX = 1.
-    RES = 0.1
+    RES = 0.05
     OPTIMIZE_FUNCTION = 'BFGS' #Need to make solver test..
     QUINTIC_OPTIMIZE_FUNCTION = 'L-BFGS-B'
     POWERS = []
@@ -344,9 +343,9 @@ class path_finder(object):
             opt.minimize(self.cost_function, np.ravel([self.scalars_x, self.scalars_y]), method = self.OPTIMIZE_FUNCTION)
 
     def find_trajectory(self, max_vel, max_acc, width):
-        xpoints = [trajectory_point(self.x(0, self.MIN), self.y(0, self.MIN))]
+        tpoints = [trajectory_point(self.x(0, self.MIN), self.y(0, self.MIN))]
 
-        xpoints[0].reset(max_acc)
+        tpoints[0].reset(max_acc)
 
         i = 0
         s = self.MAX
@@ -359,9 +358,8 @@ class path_finder(object):
             start_ds = []
 
             while s < self.MAX:
-                print ("******forward********")
                 #if (s < (self.END_S_THRES)):
-                min_vel = abs(xpoints[i].left_vel+xpoints[i].right_vel)/2
+                min_vel = abs(tpoints[i].left_vel+tpoints[i].right_vel)/2
                 new_ds = (min_vel*(self.TIME_QUANT/1000.0)) / ((self.dxds(path, s) ** 2 + self.dyds(path, s) ** 2)**0.5)
 
                 ds = max(new_ds, self.DEFAULT_SEG)
@@ -378,51 +376,46 @@ class path_finder(object):
                 angle_0 = math.atan2(self.dyds(path, s), self.dxds(path, s))
                 
                 if (s+ds < self.MAX):
-                    xpoints.append(trajectory_point(self.x(path, s+ds), self.y(path, s+ds)))
+                    tpoints.append(trajectory_point(self.x(path, s+ds), self.y(path, s+ds)))
                     angle_1 = math.atan2(self.dyds(path, s+ds), self.dxds(path, s+ds))
                 elif (path + 1 < self.path_amount):
-                    xpoints.append(trajectory_point(self.x(path+1, s+ds-self.MAX), self.y(path+1, s+ds-self.MAX)))
+                    tpoints.append(trajectory_point(self.x(path+1, s+ds-self.MAX), self.y(path+1, s+ds-self.MAX)))
                     angle_1 = math.atan2(self.dyds(path+1, s+ds-self.MAX), self.dxds(path+1, s+ds-self.MAX))
                 else:
                     break
 
-                xpoints[i+1].update_distances(xpoints[i],angle_0, angle_1, width)
+                tpoints[i+1].update_distances(tpoints[i],angle_0, angle_1, width)
 
-                xpoints[i+1].update_velocities_forward(xpoints[i], max_vel)
+                tpoints[i+1].update_velocities_forward(tpoints[i], max_vel)
 
-                dt_left, dt_right = xpoints[i+1].update_times_forward(xpoints[i]) #xpoint[i-1].vel+xpoint[i-1].max_acc*
-                
-                if (dt_left < dt_right):
-                    xpoints[i+1].update_point(xpoints[i], dt_left, dt_right, "right", max_acc, max_vel)
-                else:
-                    xpoints[i+1].update_point(xpoints[i], dt_left, dt_right, "left", max_acc, max_vel)
+                tpoints[i+1].update_point(tpoints[i], max_acc, max_vel)
 
                 i += 1
                 s += ds
 
-        sec_point_time = xpoints[1].time
-        xpoints[-1].reset(max_acc)
+        sec_point_time = tpoints[1].time
+        tpoints[-1].reset(max_acc)
 
         while (i > 1): 
-            print ("******back*******")
-            xpoints[i-1].update_velocities_backward(xpoints[i])
+            tpoints[i-1].update_velocities_backward(tpoints[i], max_vel)
 
-            dt_left, dt_right = xpoints[i-1].update_times_backward(xpoints[i]) #xpoint[i-1].vel+xpoint[i-1].max_acc*
             
-            if (dt_left < dt_right):
-                xpoints[i-1].update_point_backward(xpoints[i], dt_left, dt_right, "right", max_acc, max_vel)
-            else:
-                xpoints[i-1].update_point_backward(xpoints[i], dt_left, dt_right, "left", max_acc, max_vel)
+            tpoints[i-1].update_point_backward(tpoints[i], max_acc, max_vel)
             
             i -= 1
 
-        sec_point_time_after = xpoints[1].time
+        #choose minimum velocity and re calc time
+        # tpoints[0].time = 0
+        # for i in range(len(tpoints))[1:]:
+        #     tpoints[i].choose_min_velocity(tpoints[i-1])
+
+        sec_point_time_after = tpoints[1].time
         dt = sec_point_time - sec_point_time_after
         
-        for xpoint in xpoints[1:]:
-            xpoint.time += dt
+        for tpoint in tpoints[1:]:
+            tpoint.time += dt
 
-        return xpoints
+        return tpoints
     def draw_graph(self, res):
         xs = []
         ys = []
@@ -477,37 +470,33 @@ def main(in_data):
 
     print (json.dumps(out_data))
     for path in paths:
-        xpoints = path.find_trajectory(3.5, 8.0, 0.8)
+        tpoints = path.find_trajectory(3.5, 8.0, 0.65)
 
     left_vel = []
     right_vel = []
     left_acc = []
     right_acc = []
     times = []
-    rules = []
-    rules_l = []
+
     dts = []
 
-    for i in range(len(xpoints)):
-        left_vel.append(xpoints[i].left_vel)
-        right_vel.append(xpoints[i].right_vel)
-        if (i>0):
-            rules.append(xpoints[i].right_dist)
-            rules_l.append(xpoints[i].left_dist)
-        if (i < len(xpoints) -1):
-            left_acc.append((xpoints[i+1].left_vel-xpoints[i].left_vel)/(xpoints[i+1].time-xpoints[i].time))
-            right_acc.append((xpoints[i+1].right_vel-xpoints[i].right_vel)/(xpoints[i+1].time-xpoints[i].time))
-            dts.append(xpoints[i+1].time-xpoints[i].time)
-        
-        times.append(xpoints[i].time)
+    for i in range(len(tpoints)):
+        left_vel.append(tpoints[i].left_vel)
+        right_vel.append(tpoints[i].right_vel)
 
-    traj_p = plt.subplot (4, 1, 1)
-    acc_p  = plt.subplot (4, 1, 2)
-    path_p = plt.subplot (4, 1, 3)
-    rule_p = plt.subplot (4, 1, 4)
+        if (i < len(tpoints) -1):
+            left_acc.append((tpoints[i+1].left_vel-tpoints[i].left_vel)/(tpoints[i+1].time-tpoints[i].time))
+            right_acc.append((tpoints[i+1].right_vel-tpoints[i].right_vel)/(tpoints[i+1].time-tpoints[i].time))
+            dts.append(tpoints[i+1].time-tpoints[i].time)
+        
+        times.append(tpoints[i].time)
+
+    traj_p = plt.subplot (3, 1, 1)
+    acc_p  = plt.subplot (3, 1, 2)
+    path_p = plt.subplot (3, 1, 3)
     path_p.axis('equal')
     
-    indicies = range(len(xpoints)-2) 
+    indicies = range(len(tpoints)-2) 
 
     acc_p .plot(times[:-1], right_acc)
     acc_p .plot(times[:-1], left_acc)
@@ -524,9 +513,6 @@ def main(in_data):
     path_p.plot(paths[0].draw_graph(0.0001)[0], paths[0].draw_graph(0.0001)[1])
     path_p.set(xlabel='X', ylabel='Y')
     path_p.grid()
-
-    rule_p.plot(times[1:], rules)
-    rule_p.plot(times[1:], rules_l)
 
     plt.suptitle('Trajectory', fontsize=16)
     plt.show()
