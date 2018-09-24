@@ -359,6 +359,7 @@ class path_finder(object):
             start_ds = []
 
             while s < self.MAX:
+                print ("******forward********")
                 #if (s < (self.END_S_THRES)):
                 min_vel = abs(xpoints[i].left_vel+xpoints[i].right_vel)/2
                 new_ds = (min_vel*(self.TIME_QUANT/1000.0)) / ((self.dxds(path, s) ** 2 + self.dyds(path, s) ** 2)**0.5)
@@ -399,10 +400,11 @@ class path_finder(object):
                 i += 1
                 s += ds
 
-        sec_point_time = xpoints[0].time
+        sec_point_time = xpoints[1].time
         xpoints[-1].reset(max_acc)
 
-        while (False):#i > 0): 
+        while (i > 1): 
+            print ("******back*******")
             xpoints[i-1].update_velocities_backward(xpoints[i])
 
             dt_left, dt_right = xpoints[i-1].update_times_backward(xpoints[i]) #xpoint[i-1].vel+xpoint[i-1].max_acc*
@@ -414,10 +416,10 @@ class path_finder(object):
             
             i -= 1
 
-        sec_point_time_after = xpoints[0].time
+        sec_point_time_after = xpoints[1].time
         dt = sec_point_time - sec_point_time_after
         
-        for xpoint in xpoints:
+        for xpoint in xpoints[1:]:
             xpoint.time += dt
 
         return xpoints
@@ -448,10 +450,10 @@ def main(in_data):
     #in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},"points":[{"x":1,"y":1,"heading":0,"switch":"false"},{"x":5,"y":5,"heading":0,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
     #in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},"points":[{"x":1,"y":1,"heading":1.5707963267948966,"switch":"false"},{"x":3,"y":3,"heading":0,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
     #in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},"points":[{"x":0,"y":1,"heading":0,"switch":"false"},{"x":3,"y":1,"heading":0,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
-    # in_data = [{"params":{"poly":5,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":True},
-    #    "points":[{"x":1,"y":1,"heading":0,"switch":"false"},
-    #    {"x":6,"y":2,"heading":0,"switch":"false"},
-    #    {"x":11,"y":1,"heading":0,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
+    # in_data = [{"params":{"poly":3,"pos":1,"angle":1,"radius":1,"radius_cont":0.1,"length":0,"method":False},
+    #     "points":[{"x":1,"y":2,"heading":(1.4),"switch":"false"},
+    #     {"x":5,"y":2,"heading":(-1.4),"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
+        #{"x":11,"y":1,"heading":0,"switch":"false"}],"scalars_x":[None],"scalars_y":[None]}]
     #get data from GUI
 ##########################################Testing#################################
     

@@ -23,7 +23,8 @@ class trajectory_point(object):
         self.right_vel = 0 
         self.left_vel = 0
         self.right_acc = 0 
-        self.left_acc = 0 
+        self.left_acc = 0
+
         self.jerk = 10
         self.rule = 0
 
@@ -48,55 +49,69 @@ class trajectory_point(object):
         new_vel = (abs(2*prev_point.right_acc*self.right_dist + prev_point.right_vel**2))**0.5
         self.right_vel = min(max_vel, new_vel, key=abs)
         
+        # print("left dist:", self.left_dist)
+        # print ("right dist:", self.right_dist)
+        # print ("left vel:",self.left_vel)
+        # print ("prev left vel:", prev_point.left_vel)
+        # print ("right_vel:", self.right_vel)
+        # print ("prev right vel:", prev_point.right_vel)
+        # print ("prev left acc:", prev_point.left_acc)
+        # print ("prev right acc:", prev_point.right_acc)
+        
     def update_velocities_backward (self, prev_point):                
+
         new_vel = (abs(2*prev_point.left_acc*prev_point.left_dist + prev_point.left_vel**2))**0.5
         self.left_vel = min(self.left_vel, new_vel, key=abs)
         
         new_vel = (abs(2*prev_point.right_acc*prev_point.right_dist + prev_point.right_vel**2))**0.5
         self.right_vel = min(self.right_vel, new_vel, key=abs)
 
+        # print("left dist:", prev_point.left_dist)
+        # print ("right dist:", prev_point.right_dist)
+        # print ("left vel:",self.left_vel)
+        # print ("prev left vel:", prev_point.left_vel)
+        # print ("right_vel:", self.right_vel)
+        # print ("prev right vel:", prev_point.right_vel)
+        # print ("prev left acc:", prev_point.left_acc)
+        # print ("prev right acc:", prev_point.right_acc)
+    
     def update_times_forward (self, prev_point):
-        dt_left = 2*self.left_dist/(self.left_vel+prev_point.left_vel)
-        dt_right = 2*self.right_dist/(self.right_vel+prev_point.right_vel)
+        dt_left = self.left_dist/(self.left_vel + 10**(-8))
+        dt_right = self.right_dist/(self.right_vel + 10**(-8))
 
         return dt_left, dt_right
     
     def update_times_backward (self, prev_point):
-        dt_left = 2*prev_point.left_dist/(self.left_vel+prev_point.left_vel)
-        dt_right = 2*prev_point.right_dist/(self.right_vel+prev_point.right_vel)
+        dt_left = prev_point.left_dist/(self.left_vel + 10**(-8))
+        dt_right = prev_point.right_dist/(self.right_vel + 10**(-8))
 
         return dt_left, dt_right
     
     def update_point(self, prev_point, dt_left, dt_right, faster_side, max_acc, max_vel):
         if faster_side == "right":
-            #self.left_vel  = 2*self.left_dist/dt_right - prev_point.left_vel #- prev_point.left_acc*(dt_right**2)
-            self.left_vel = (self.left_vel + prev_point.left_vel)*(dt_left/dt_right) - prev_point.left_vel
+            self.left_vel = self.left_dist/dt_right
             self.right_acc = max_acc #max(max_acc-max_acc*(abs(self.right_vel)/max_vel), 0.1)
             self.left_acc  = max_acc #(abs(self.left_vel-prev_point.left_vel))/dt_right 
             self.time = prev_point.time+dt_right
             self.rule = 1
-
+    
         elif faster_side == "left":
-            #self.right_vel  = 2*self.right_dist/dt_left - prev_point.right_vel #- prev_point.right_acc*(dt_left**2)
-            self.right_vel = (self.right_vel + prev_point.right_vel)*(dt_right/dt_left) - prev_point.right_vel
-            self.right_acc = max_acc #(abs(self.right_vel-prev_point.right_vel))/dt_left
-            self.left_acc  = max_acc #max(max_acc-max_acc*(abs(self.left_vel)/max_vel), 0.1)
+            self.right_vel = self.right_dist/dt_left
+            self.right_acc  = max_acc #(self.right_vel-prev_point.right_vel)/dt_left #self.left_acc*time_ratio*(self.left_vel-prev_point.left_vel)/(self.right_vel-prev_point.right_vel)
+            self.left_acc   = max_acc #max(max_acc-max_acc*(abs(self.left_vel)/max_vel), 0.1)
             self.time = prev_point.time+dt_left
-            self.rule = 2
-
+    
     def update_point_backward(self, prev_point, dt_left, dt_right, faster_side, max_acc, max_vel):
         if faster_side == "right":
-            #self.left_vel  = 2*prev_point.left_dist/dt_right - prev_point.left_vel#- prev_point.left_acc*(dt_right**2)
-            self.left_vel = (self.left_vel + prev_point.left_vel)*(dt_left/dt_right) - prev_point.left_vel
-            self.right_acc = max(max_acc-max_acc*(abs(self.right_vel)/max_vel), 0.1)
-            self.left_acc  = (self.left_vel-prev_point.left_vel)/dt_right
+            self.left_vel = prev_point.left_dist/dt_right
+            self.right_acc = max_acc #max(max_acc-max_acc*(abs(self.right_vel)/max_vel), 0.1)
+            self.left_acc  = max_acc #(self.left_vel-prev_point.left_vel)/dt_right
             self.time = prev_point.time-dt_right
 
         elif faster_side == "left":
-            #self.right_vel  = 2*prev_point.right_dist/dt_left - prev_point.right_vel#- prev_point.right_acc*(dt_left**2)
-            self.right_vel = (self.right_vel + prev_point.right_vel)*(dt_right/dt_left) - prev_point.right_vel
-            self.right_acc  = (self.right_vel-prev_point)/dt_left #self.left_acc*time_ratio*(self.left_vel-prev_point.left_vel)/(self.right_vel-prev_point.right_vel)
-            self.left_acc   = max(max_acc-max_acc*(abs(self.left_vel)/max_vel), 0.1)
+            self.right_vel = prev_point.right_dist/dt_left
+            self.right_acc  = max_acc #(self.right_vel-prev_point.right_vel)/dt_left #self.left_acc*time_ratio*(self.left_vel-prev_point.left_vel)/(self.right_vel-prev_point.right_vel)
+            self.left_acc   = max_acc #max(max_acc-max_acc*(abs(self.left_vel)/max_vel), 0.1)
             self.time = prev_point.time-dt_left
 
     def reset (self, max_acc):
