@@ -41,9 +41,9 @@ class path_finder(object):
     HIGHEST_POLYNOM = 5
     MIN = 0.
     MAX = 1.
-    RES = 0.05
+    RES = 0.1
     OPTIMIZE_FUNCTION = 'BFGS' #Need to make solver test..
-    QUINTIC_OPTIMIZE_FUNCTION = 'L-BFGS-B'
+    QUINTIC_OPTIMIZE_FUNCTION = 'Nelder-Mead'
     POWERS = []
             #'Nelder-Mead' 'Powell' 'CG' 'BFGS' 'Newton-CG' 'L-BFGS-B' 'TNC' 'COBYLA' 'SLSQP' 'trust-constr' 'dogleg' 'trust-ncg' 'trust-exact' 'trust-krylov'
     length_cost_val = 0
@@ -56,7 +56,7 @@ class path_finder(object):
 
     #trajectory
     TIME_QUANT  = 2.0 #ms
-    DEFAULT_SEG = 0.0001
+    DEFAULT_SEG = 0.000001
     END_S_THRES = 0.95
 
     def __init__(self, params, scalars_x, scalars_y, *args):
@@ -155,7 +155,7 @@ class path_finder(object):
         self.POS_COST         = params.get("pos", 1)*6000000000
         self.ANGLE_COST       = params.get("angle", 1)*6000000000
         self.RADIUS_COST      = params.get("radius", 1)*100
-        self.RADIUS_CONT_COST = params.get("radius_cont", 1)*100000
+        self.RADIUS_CONT_COST = params.get("radius_cont", 1)*.001
         self.LENGTH_COST      = params.get("length", 0)*0.00001
 
     def x(self, index, s):
@@ -267,10 +267,11 @@ class path_finder(object):
             counter = 0
 
         for index in range(self.path_amount - 1):
-            #rad = self.radius(index, self.MAX)
-            #last_rad = self.radius(index+1, self.MIN)
-            curv = math.sqrt(self.d2xds2(index, self.MAX)**2+self.d2yds2(index, self.MAX)**2)
-            last_curv = math.sqrt(self.d2xds2(index+1, self.MIN)**2+self.d2yds2(index+1, self.MIN)**2)
+            curv = self.radius(index, self.MAX-0.001)
+            last_curv = self.radius(index+1, self.MIN+0.001)
+            #curv = math.sqrt(self.d2xds2(index, self.MAX)**2+self.d2yds2(index, self.MAX)**2)
+            #last_curv = math.sqrt(self.d2xds2(index+1, self.MIN)**2+self.d2yds2(index+1, self.MIN)**2)
+            
             cost += (last_curv-curv) ** 2
             counter += 1
         return cost/counter
@@ -305,9 +306,9 @@ class path_finder(object):
     def quintic_cost_function(self, args):
         
         for index, point in enumerate(self.points):
-            point.ddx = args[index*3]
-            point.ddy = args[index*3+1]
-            point.magnitude_factor = args[index*3+2]
+            point.ddx = args[index*2]
+            point.ddy = args[index*2+1]
+            #point.magnitude_factor = args[index*3+2]
         
         self.scalars_x = self.create_quintic_scalar_x()
         self.scalars_y = self.create_quintic_scalar_y()
@@ -336,7 +337,7 @@ class path_finder(object):
             for point in self.points:
                 args.append(point.ddx)
                 args.append(point.ddy)
-                args.append(point.magnitude_factor)
+                #args.append(point.magnitude_factor)
 
             opt.minimize(self.quintic_cost_function, args, method = self.QUINTIC_OPTIMIZE_FUNCTION)
         else:
@@ -354,25 +355,28 @@ class path_finder(object):
         for path in range(self.path_amount):
             s -= self.MAX
             
-            ds_index = 1   
+            ds_index = 1
             start_ds = []
 
             while s < self.MAX:
-                #if (s < (self.END_S_THRES)):
-                min_vel = abs(tpoints[i].left_vel+tpoints[i].right_vel)/2
-                new_ds = (min_vel*(self.TIME_QUANT/1000.0)) / ((self.dxds(path, s) ** 2 + self.dyds(path, s) ** 2)**0.5)
+                if (s*(path+1.0) < (self.END_S_THRES+(self.path_amount-1.0)*self.MAX)):
+                    min_vel = abs(tpoints[i].left_vel+tpoints[i].right_vel)/2
+                    new_ds = (min_vel*(self.TIME_QUANT/1000.0)) / ((self.dxds(path, s) ** 2 + self.dyds(path, s) ** 2)**0.5)
 
-                ds = max(new_ds, self.DEFAULT_SEG)
-                    
-                if ds > 0.01:
-                    ds = 0.01
+                    ds = max(new_ds, self.DEFAULT_SEG)
+                        
+                    if ds > 0.01:
+                        ds = 0.001
 
-                    #if (s < (1-self.END_S_THRES)):
-                    #    start_ds.append(ds)
+                    if (s < (self.MAX-self.END_S_THRES)):
+                        start_ds.append(ds)
 
-                # else:
-                #     ds = start_ds[-ds_index]
-                #     ds_index += 1
+                elif ds_index > 0:
+                    ds = start_ds[-ds_index]
+                    ds_index += 1    
+                else:
+                    ds = 0.001
+
                 angle_0 = math.atan2(self.dyds(path, s), self.dxds(path, s))
                 
                 if (s+ds < self.MAX):
@@ -388,7 +392,7 @@ class path_finder(object):
 
                 tpoints[i+1].update_velocities_forward(tpoints[i], max_vel)
 
-                tpoints[i+1].update_point(tpoints[i], max_acc, max_vel)
+                tpoints[i+1].update_point(tpoints[i], max_vel, max_acc, 800)
 
                 i += 1
                 s += ds
@@ -398,24 +402,23 @@ class path_finder(object):
 
         while (i > 1): 
             tpoints[i-1].update_velocities_backward(tpoints[i], max_vel)
-
             
-            tpoints[i-1].update_point_backward(tpoints[i], max_acc, max_vel)
+            tpoints[i-1].update_point_backward(tpoints[i], max_vel, max_acc, 800)
             
             i -= 1
 
         #choose minimum velocity and re calc time
-        # tpoints[0].time = 0
-        # for i in range(len(tpoints))[1:]:
-        #     tpoints[i].choose_min_velocity(tpoints[i-1])
+        tpoints[0].time = 0
 
         sec_point_time_after = tpoints[1].time
         dt = sec_point_time - sec_point_time_after
-        
-        for tpoint in tpoints[1:]:
-            tpoint.time += dt
+
+        for i in range(len(tpoints))[1:]:
+           tpoints[i].time += dt
+           tpoints[i].choose_min_velocity(tpoints[i-1])
 
         return tpoints
+
     def draw_graph(self, res):
         xs = []
         ys = []
@@ -469,8 +472,10 @@ def main(in_data):
         out_data.append(path.create_data())
 
     print (json.dumps(out_data))
+
+    width = 0.65
     for path in paths:
-        tpoints = path.find_trajectory(3.5, 8.0, 0.65)
+        tpoints = path.find_trajectory(3.5, 8.0, width)
 
     left_vel = []
     right_vel = []
@@ -480,41 +485,64 @@ def main(in_data):
 
     dts = []
 
+    sim_v  = 0
+    sim_head = tpoints[0].angle
+    sim_x, sim_y = [tpoints[0].x], [tpoints[0].y]
+    
     for i in range(len(tpoints)):
         left_vel.append(tpoints[i].left_vel)
         right_vel.append(tpoints[i].right_vel)
 
+        sim_v = (right_vel[i]+left_vel[i])
+        #sim_head = tpoints[i].angle
+
         if (i < len(tpoints) -1):
-            left_acc.append((tpoints[i+1].left_vel-tpoints[i].left_vel)/(tpoints[i+1].time-tpoints[i].time))
-            right_acc.append((tpoints[i+1].right_vel-tpoints[i].right_vel)/(tpoints[i+1].time-tpoints[i].time))
+            dt = (tpoints[i+1].time-tpoints[i].time)
+            
+            sim_head += ((right_vel[i]-left_vel[i])/width)*dt
+            sim_x.append(sim_x[i-1]+sim_v*math.cos(sim_head)*dt)
+            sim_y.append(sim_y[i-1]+sim_v*math.sin(sim_head)*dt)
+
+            left_acc.append((tpoints[i+1].left_vel-tpoints[i].left_vel)/dt)
+            right_acc.append((tpoints[i+1].right_vel-tpoints[i].right_vel)/dt)
             dts.append(tpoints[i+1].time-tpoints[i].time)
         
         times.append(tpoints[i].time)
 
+    fig = plt.figure(figsize=(9, 5),dpi=80)
+    fig.canvas.set_window_title('Trajectory Graphs')
+
     traj_p = plt.subplot (3, 1, 1)
     acc_p  = plt.subplot (3, 1, 2)
-    path_p = plt.subplot (3, 1, 3)
-    path_p.axis('equal')
+    path_p = plt.subplot (3, 2, 5)
+    dsdt_p = plt.subplot (3, 2, 6)
+
     
     indicies = range(len(tpoints)-2) 
 
     acc_p .plot(times[:-1], right_acc)
     acc_p .plot(times[:-1], left_acc)
-    #acc_p.plot(times[:-1], dts)
-    acc_p.set(xlabel='points', ylabel='Acceleration')
+    acc_p.set(xlabel='', ylabel='Acceleration [m/s2]')
     acc_p.grid()
 
-    traj_p.plot(times, right_vel)
-    traj_p.plot(times, left_vel)
-    traj_p.set(xlabel='time', ylabel='Velocity')
+    traj_p.plot(times, right_vel, label='left')
+    traj_p.plot(times, left_vel, label='right')
+    handles, labels = traj_p.get_legend_handles_labels()
+    traj_p.legend(handles, labels)
+    traj_p.set(xlabel='', ylabel='Velocity [m/s]')
     traj_p.grid()
 
     #path_p.scatter(paths[0].draw_graph(0.001)[0], paths[0].draw_graph(0.001)[1], s=3)
-    path_p.plot(paths[0].draw_graph(0.0001)[0], paths[0].draw_graph(0.0001)[1])
-    path_p.set(xlabel='X', ylabel='Y')
+    path_p.plot(paths[0].draw_graph(0.001)[0], paths[0].draw_graph(0.001)[1])
+    path_p.plot(sim_x, sim_y)
+    path_p.set(xlabel='X [m]', ylabel='Y [m]')
+    path_p.axis('equal')
     path_p.grid()
 
-    plt.suptitle('Trajectory', fontsize=16)
+    dsdt_p.plot(times[:-1], dts)
+    dsdt_p.set(xlabel='time', ylabel='ds/dt [S/s]')
+    dsdt_p.grid()
+    
     plt.show()
     plt.close('all')
 
