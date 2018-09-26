@@ -267,8 +267,8 @@ class path_finder(object):
             counter = 0
 
         for index in range(self.path_amount - 1):
-            curv = self.radius(index, self.MAX-0.001)
-            last_curv = self.radius(index+1, self.MIN+0.001)
+            curv = self.radius(index, self.MAX-0.0001)
+            last_curv = self.radius(index+1, self.MIN+0.0001)
             #curv = math.sqrt(self.d2xds2(index, self.MAX)**2+self.d2yds2(index, self.MAX)**2)
             #last_curv = math.sqrt(self.d2xds2(index+1, self.MIN)**2+self.d2yds2(index+1, self.MIN)**2)
             
@@ -392,7 +392,7 @@ class path_finder(object):
 
                 tpoints[i+1].update_velocities_forward(tpoints[i], max_vel)
 
-                tpoints[i+1].update_point(tpoints[i], max_vel, max_acc, 800)
+                tpoints[i+1].update_point(tpoints[i], max_vel, max_acc, 100000000)
 
                 i += 1
                 s += ds
@@ -401,21 +401,22 @@ class path_finder(object):
         tpoints[-1].reset(max_acc)
 
         while (i > 1): 
-            tpoints[i-1].update_velocities_backward(tpoints[i], max_vel)
-            
-            tpoints[i-1].update_point_backward(tpoints[i], max_vel, max_acc, 800)
-            
+            # tpoints[i-1].update_velocities_backward(tpoints[i], max_vel) 
+            # tpoints[i-1].update_point_backward(tpoints[i], max_vel, max_acc, 800)
+
+            tpoints[i-1].update_velocities_back(tpoints[i], max_vel, max_acc)
             i -= 1
 
-        #choose minimum velocity and re calc time
-        tpoints[0].time = 0
 
         sec_point_time_after = tpoints[1].time
         dt = sec_point_time - sec_point_time_after
-
+        
+        #choose minimum velocity and re calc time
+        tpoints[0].time = 0
         for i in range(len(tpoints))[1:]:
-           tpoints[i].time += dt
-           tpoints[i].choose_min_velocity(tpoints[i-1])
+            #tpoints[i].time += dt
+            #tpoints[i].choose_min_velocity(tpoints[i-1])
+            tpoints[i].update_times(tpoints[i-1])
 
         return tpoints
 
@@ -517,11 +518,10 @@ def main(in_data):
     path_p = plt.subplot (3, 2, 5)
     dsdt_p = plt.subplot (3, 2, 6)
 
-    
     indicies = range(len(tpoints)-2) 
 
-    acc_p .plot(times[:-1], right_acc)
-    acc_p .plot(times[:-1], left_acc)
+    acc_p.plot(times[:-1], right_acc)
+    acc_p.plot(times[:-1], left_acc)
     acc_p.set(xlabel='', ylabel='Acceleration [m/s2]')
     acc_p.grid()
 

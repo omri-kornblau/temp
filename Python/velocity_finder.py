@@ -36,7 +36,7 @@ class trajectory_point(object):
         self.rule = 0
 
     def update_distances (self, prev_point, angle0 ,angle1, width):
-        dist = math.sqrt((self.x-prev_point.x)**2 + (self.y-prev_point.y)**2)
+        self.dist = math.sqrt((self.x-prev_point.x)**2 + (self.y-prev_point.y)**2)
         self.angle = angle1
 
         angle_diff = delta_angle(self.angle, angle0)
@@ -45,9 +45,9 @@ class trajectory_point(object):
             self.left_dist = dist
             self.right_dist = dist
         else:
-            rad = dist/angle_diff
-            self.left_dist = dist*((rad-width/2)/rad)
-            self.right_dist = dist*((rad+width/2)/rad)
+            rad = self.dist/angle_diff
+            self.left_dist = self.dist*((rad-width/2)/rad)
+            self.right_dist = self.dist*((rad+width/2)/rad)
 
     def update_velocities_forward (self, prev_point, max_vel):        
         new_vel = sign(self.left_dist)*((2*prev_point.left_acc*abs(self.left_dist) + prev_point.left_vel**2))**0.5
@@ -66,12 +66,11 @@ class trajectory_point(object):
         # print ("prev right acc:", prev_point.right_acc)
         
     def update_velocities_backward (self, prev_point, max_vel):                
-
         new_vel = sign(prev_point.left_dist)*((2*prev_point.left_acc*abs(prev_point.left_dist) + prev_point.left_vel**2))**0.5
-        self.left_vel = min(max_vel, new_vel, key=abs)
+        self.left_vel = min(self.left_vel, new_vel, key=abs)
         
         new_vel = sign(prev_point.right_dist)*((2*prev_point.right_acc*abs(prev_point.right_dist) + prev_point.right_vel**2))**0.5
-        self.right_vel = min(max_vel, new_vel, key=abs)
+        self.right_vel = min(self.right_vel, new_vel, key=abs)
 
         # print("left dist:", prev_point.left_dist)
         # print ("right dist:", prev_point.right_dist)
@@ -82,23 +81,52 @@ class trajectory_point(object):
         # print ("prev left acc:", prev_point.left_acc)
         # print ("prev right acc:", prev_point.right_acc)
 
+    def update_velocities_back (self, prev_point, max_vel, max_acc):
+        dt = prev_point.time - self.time
+        
+        right_acc = (self.right_vel-prev_point.right_vel)/dt 
+        left_acc  = (self.left_vel-prev_point.left_vel)/dt
+        
+        if ((right_acc > max_acc) or (left_acc > max_acc)):
+            if (right_acc > left_acc):
+                acc = max_acc #max(max_acc-max_acc*(abs(prev_point.right_vel)/max_vel), 0.1)
+                self.right_vel =  sign(prev_point.right_dist)*((2*acc*abs(prev_point.right_dist) + prev_point.right_vel**2))**0.5
+                dt = prev_point.right_dist/self.right_vel
+                self.left_vel = prev_point.left_dist/dt
+
+            else:
+                acc = max_acc #max(max_acc-max_acc*(abs(prev_point.left_vel)/max_vel), 0.1)
+                self.left_vel =  sign(prev_point.left_dist)*((2*acc*abs(prev_point.left_dist) + prev_point.left_vel**2))**0.5
+                dt = prev_point.left_dist/self.left_vel
+                self.right_vel = prev_point.right_dist/dt
+            
+
     def update_point(self, prev_point, max_vel, max_acc, jerk):
-        #####worth trying choosing by distance#####
         dt_left  = self.left_dist/(self.left_vel + 10**(-8))
         dt_right = self.right_dist/(self.right_vel + 10**(-8))
 
         if dt_left < dt_right:
             self.left_vel  = self.left_dist/dt_right
+            
             max_acc_by_vel = max(max_acc-max_acc*(abs(self.right_vel)/max_vel), 0.1)
             self.right_acc = min (self.right_acc + jerk*dt_right, max_acc_by_vel, key=abs)
-            self.left_acc  = (abs(self.left_vel-prev_point.left_vel))/dt_right 
+            
+            cur_acc = (abs(self.left_vel-prev_point.left_vel))/dt_right 
+            max_acc_by_vel = max(max_acc-max_acc*(abs(self.left_vel)/max_vel), 0.1)
+            self.left_acc  = min (cur_acc + jerk*dt_right, max_acc_by_vel, key=abs) 
+            
             self.time = prev_point.time+dt_right
     
         else:
             self.right_vel  = self.right_dist/dt_left
+            
             max_acc_by_vel = max(max_acc-max_acc*(abs(self.left_vel)/max_vel), 0.1)
-            self.right_acc  = (abs(self.right_vel-prev_point.right_vel))/dt_left 
-            self.left_acc   = min(self.left_acc + jerk*dt_left, max_acc_by_vel, key=abs)
+            self.left_acc = min (self.left_acc + jerk*dt_left, max_acc_by_vel, key=abs)
+            
+            cur_acc = (abs(self.right_vel-prev_point.right_vel))/dt_left 
+            max_acc_by_vel = max(max_acc-max_acc*(abs(self.right_vel)/max_vel), 0.1)
+            self.right_acc  = min (cur_acc + jerk*dt_left, max_acc_by_vel, key=abs) 
+            
             self.time = prev_point.time+dt_left
     
         self.left_vel_f  = self.left_vel
@@ -110,16 +138,25 @@ class trajectory_point(object):
 
         if dt_left < dt_right:
             self.left_vel  = prev_point.left_dist/dt_right
-            max_acc_by_vel = max(max_acc-max_acc*(abs(self.right_vel)/max_vel), 0.1)
-            self.right_acc = min (self.right_acc + jerk*dt_right, max_acc_by_vel, key=abs) #max(max_acc-max_acc*(abs(self.right_vel)/max_vel), 0.1)
-            self.left_acc  = (abs(self.left_vel-prev_point.left_vel))/dt_right
+            
+            #max_acc_by_vel = max(max_acc-max_acc*(abs(self.right_vel)/max_vel), 0.1)
+            self.right_acc = self.right_acc + jerk*dt_right #, max_acc_by_vel, key=abs)
+            
+            cur_acc = (abs(self.left_vel-prev_point.left_vel))/dt_right 
+            max_acc_by_vel = max(max_acc-max_acc*(abs(self.left_vel)/max_vel), 0.1)
+            self.left_acc  = min (cur_acc + jerk*dt_right, max_acc_by_vel, key=abs) 
+            
             self.time = prev_point.time-dt_right
-
         else:
             self.right_vel = prev_point.right_dist/dt_left
-            self.right_acc = (abs(self.right_vel-prev_point.right_vel))/dt_left #self.left_acc*time_ratio*(self.left_vel-prev_point.left_vel)/(self.right_vel-prev_point.right_vel)
-            max_acc_by_vel = max(max_acc-max_acc*(abs(self.left_vel)/max_vel), 0.1)
-            self.left_acc  = min(self.left_acc + jerk*dt_left, max_acc_by_vel, key=abs)
+            
+            #max_acc_by_vel = max(max_acc-max_acc*(abs(self.left_vel)/max_vel), 0.1)
+            self.left_acc = self.left_acc + jerk*dt_left #, max_acc_by_vel, key=abs)
+            
+            cur_acc = (abs(self.right_vel-prev_point.right_vel))/dt_left 
+            max_acc_by_vel = max(max_acc-max_acc*(abs(self.right_vel)/max_vel), 0.1)
+            self.right_acc  = min (cur_acc + jerk*dt_left, max_acc_by_vel, key=abs) 
+            
             self.time = prev_point.time-dt_left
 
         self.left_vel_b  = self.left_vel
@@ -137,9 +174,10 @@ class trajectory_point(object):
         if ((self.left_vel_b < self.left_vel_f) and (self.right_vel_b < self.right_vel_f)):
             self.right_vel = self.right_vel_b
             self.left_vel  = self.left_vel_b
-        else:# ((self.left_vel_b > self.left_vel_f) and (self.right_vel_b > self.right_vel_f)):
+        else: #((self.left_vel_b > self.left_vel_f) and (self.right_vel_b > self.right_vel_f)):
             self.right_vel = self.right_vel_f
             self.left_vel = self.left_vel_f
 
-        self.time = prev_point.time + 2*self.left_dist/(prev_point.left_vel+self.left_vel)
+    def update_times (self, prev_point):
+        self.time = prev_point.time + 4*self.dist/(self.left_vel+prev_point.left_vel+self.right_vel+prev_point.right_vel)
 
