@@ -8,11 +8,13 @@ var field_canvas;
 var points_canvas;
 var pixel_meters;
 
-const default_data = [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}]
+const default_data = {path: [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}]}
 
 var parsed_data  = [default_data]; //stores all the data got from python 
 
 var points; //stores 'Points' object
+
+var clicked_graph = true;
 
 var data_version = 0; //stores current data version
 var new_solve    = true; //whether there is data or not
@@ -129,8 +131,12 @@ function get_mouse_pos (canvas, evt) {
   return {x: evt.clientX - rect.left, y: evt.clientY - rect.top};
 }
 
-function get_data () {
-  return(parsed_data[data_version]);
+function get_path_data () {
+  return(parsed_data[data_version]["path"]);
+}
+
+function get_traj_data () {
+  return(parsed_data[data_version]["traj"]);
 }
 
 function draw_path (path_points){
@@ -221,8 +227,8 @@ function draw_field() {
     f_ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
     f_ctx.shadowBlur = 0;
 
-    for (var i = 0; i < get_data().length; i++) {
-      draw_path(get_data()[i]["path_points"]);
+    for (var i = 0; i < get_path_data().length; i++) {
+      draw_path(get_path_data()[i]["path_points"]);
     }
     
     document.getElementById("version-header").innerHTML = data_version + " / " + (parsed_data.length-1)
@@ -234,11 +240,11 @@ function draw_field() {
 
 function update_costs () {
   /* Missing here: 'for' loop to handle multiple paths costs*/
-  document.getElementById("pos_cost_val").innerHTML = get_data()[0]["costs"]["pos_cost"].toPrecision(3);
-  document.getElementById("angle_cost_val").innerHTML = get_data()[0]["costs"]["angle_cost"].toPrecision(3);
-  document.getElementById("radius_cost_val").innerHTML = get_data()[0]["costs"]["radius_cost"].toPrecision(3);
-  document.getElementById("radius_cont_cost_val").innerHTML = get_data()[0]["costs"]["radius_cont_cost"].toPrecision(3);
-  document.getElementById("length_cost_val").innerHTML = get_data()[0]["costs"]["length_cost"].toPrecision(3);
+  document.getElementById("pos_cost_val").innerHTML = get_path_data()[0]["costs"]["pos_cost"].toPrecision(3);
+  document.getElementById("angle_cost_val").innerHTML = get_path_data()[0]["costs"]["angle_cost"].toPrecision(3);
+  document.getElementById("radius_cost_val").innerHTML = get_path_data()[0]["costs"]["radius_cost"].toPrecision(3);
+  document.getElementById("radius_cont_cost_val").innerHTML = get_path_data()[0]["costs"]["radius_cont_cost"].toPrecision(3);
+  document.getElementById("length_cost_val").innerHTML = get_path_data()[0]["costs"]["length_cost"].toPrecision(3);
 }
 
 function update_forms () {
@@ -254,18 +260,23 @@ function update_forms () {
 //delete future changes and push new version of paths
 function new_version (push_item) {
   if (data_version < parsed_data.length) {
-      parsed_data.splice(data_version+1, parsed_data.length);
-    }
+    parsed_data.splice(data_version+1, parsed_data.length);
+  }
   parsed_data.push(push_item);
   data_version++;
+  clicked_graph = false;
+  show_graph();
   draw_field();
 }
 
 function reset_data () {
   data_version = 0;
-  parsed_data = [default_data];
+  parsed_data["path"] = [default_data];
   new_solve = true;
   points.update();
+  $("#download").hide(300);
+  $(".traj-area").hide(200)
+  clicked_graph = true;
   draw_field();
 }
 
@@ -293,11 +304,12 @@ function undo_change () {
 function add_point () {
   $('#points').append("<tr class='point move-cursor' class='point'>"+
     "<td class='x'><input class='form-control form-control-small' type='number' step='0.1' placeholder='X' oninput='reset_data()' value="+
-    (points.getData()[points.amount-1]["x"]+1)+"></td>"+
+    Math.min(real_field_width,(points.getData()[points.amount-1]["x"]+1))+
+    "></td>"+
     //1 +
     "></td>" +
     "<td class='y'><input class='form-control form-control-small' type='number' step='0.1' placeholder='Y' oninput='reset_data()' value="+
-    (points.getData()[points.amount-1]["y"]+1)+
+    Math.min(real_field_height,(points.getData()[points.amount-1]["y"]+1))+
     //1 + 
     "></td>"+
     "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset_data()' value=0></td>"+
@@ -338,16 +350,16 @@ function solve() {
       data.push({
         "params": params, 
         "points":points_data.slice(start),
-        "scalars_x":get_data()[path_num]["scalars_x"], 
-        "scalars_y":get_data()[path_num]["scalars_y"]});
+        "scalars_x":get_path_data()[path_num]["scalars_x"], 
+        "scalars_y":get_path_data()[path_num]["scalars_y"]});
       }
 
     if (points_data[i]["switch"]  == "true") {   
       data.push({
         "params": params, 
         "points":points_data.slice(start, i + 1),
-        "scalars_x":get_data()[path_num]["scalars_x"], 
-        "scalars_y":get_data()[path_num]["scalars_y"]});
+        "scalars_x":get_path_data()[path_num]["scalars_x"], 
+        "scalars_y":get_path_data()[path_num]["scalars_y"]});
       start = i;
     
       if (!new_solve) {
@@ -356,15 +368,16 @@ function solve() {
     }
   }
 
-  $("#loader").show(700);
-  
+  $("#download").hide(300);
+  $("#loader").show(300);
+
   var data = JSON.stringify(data);
   
   console.log(data)
 
   $.post("http://127.0.0.1:3000/", {"data": data}, function(data, status) {
-    $("#loader").hide(1000);
-
+    $("#loader").hide(300);
+    $("#download").show(300);
     new_solve = false;
     new_version(JSON.parse(data));
     update_costs();
