@@ -2802,7 +2802,7 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
   padding: 5px;
   padding-right: 10px;
   width: 500px; 
-  height: 360px;
+  height: 400px;
   margin: auto;
   background-color: rgba(69, 69, 69, 0.95);
   color: white;
@@ -2828,9 +2828,26 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
   text-shadow: 1px 1px 4px #202020; 
 }
 
+.ct-chart {
+  svg {
+    width: 100%;
+  }
+}
 .ct-zoom-rect {
   fill: rgba(255, 255, 255, 0.3);
   stroke: #101010;
+}
+
+.ct-line {
+  stroke-dasharray: 5000;
+  stroke-dashoffset: 5000;
+  animation: dash 4s linear forwards;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 .lds-ellipsis {

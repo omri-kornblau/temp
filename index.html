@@ -3,8 +3,8 @@
     <head>
         <title>Path Finder</title>
         <link rel="stylesheet" href="static/css/bootstrap.min.css">
-        <link rel="stylesheet" href="static/css/bootflat.css">
         <link rel="stylesheet" href="static/css/chartist.css">
+        <link rel="stylesheet" href="static/css/bootflat.css">
         <link rel="icon" href="static/img/favicon.ico">
     </head>
 
@@ -17,7 +17,7 @@
                 <h5>Velocities</h5>
                 <i id="vel-zoom-icon" class="glyphicon glyphicon-zoom-in zoom-icon"></i>
             </div>
-            <div class="traj-chart" ondblclick="return resetAccGraph();" id="acc-chart">
+            <div class="traj-chart" style="padding-top: 15px;" ondblclick="return resetAccGraph();" id="acc-chart">
                 <h5>Accelerations</h5>
                 <i id="acc-zoom-icon" class="glyphicon glyphicon-zoom-in zoom-icon"></i>
             </div>
@@ -199,7 +199,7 @@
         <script src="static/js/chartist-plugin-zoom.min.js"></script>
         <!-- PathFinder -->
         <script type="text/javascript"> $('#points').sortable();</script>
-        <script src="static/js/main.js"></script>
+        <script src="static/js/home.js"></script>
         <script src="static/js/graph-traj.js"></script>
         <!-- Bootflat's JS files.-->
         <script src="https://bootflat.github.io/bootflat/js/icheck.min.js"></script>

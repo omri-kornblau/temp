@@ -24,8 +24,8 @@ function draw_traj () {
     ],}, {
     axisX: {
       type: Chartist.AutoScaleAxis,
-      showGrid: false,
-      showLabel: false,
+      showGrid: true,
+      showLabel: true,
     },
     plugins: [
       Chartist.plugins.zoom({onZoom : onZoomVel})//{ onZoom: onZoom })
@@ -43,7 +43,7 @@ function draw_traj () {
     ],}, {
     axisX: {
       type: Chartist.AutoScaleAxis,
-      showGrid: false,
+      showGrid: true,
       showLabel: true,
     },
       labels: [get_traj_data()["time"],get_traj_data()["time"]],

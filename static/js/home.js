@@ -346,7 +346,6 @@ function solve() {
   var path_num = 0;
   for(var i = 0; i < points_data.length; i++)  {
     if (i == points_data.length - 1) {
-      console.log(path_num);
       data.push({
         "params": params, 
         "points":points_data.slice(start),
@@ -373,8 +372,6 @@ function solve() {
 
   var data = JSON.stringify(data);
   
-  console.log(data)
-
   $.post("http://127.0.0.1:3000/", {"data": data}, function(data, status) {
     $("#loader").hide(300);
     $("#download").show(300);

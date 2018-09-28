@@ -1,13 +1,13 @@
 from __future__ import division
 from matplotlib import pyplot as plt
 from scipy import optimize as opt
-from velocity_finder import trajectory_point
+from utils import trajectory_point
 
 import numpy as np
 import math
 import json
 import sys
-import velocity_finder
+import utils
 
 class point(object):
     """docstring for dot"""
@@ -511,7 +511,7 @@ def main(in_data):
         path.find_scalars()
         path.find_trajectory(width, 3.5, 8., 100.)
         out_data["path"].append(path.create_path_data())
-        out_data["traj"] = velocity_finder.merge_dicts(out_data["traj"], path.create_traj_data())
+        out_data["traj"] = utils.merge_dicts(out_data["traj"], path.create_traj_data())
 
     print (json.dumps(out_data))
 
