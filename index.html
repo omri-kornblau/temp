@@ -32,6 +32,12 @@
                 <!--<li class="toggle"><a href="#">Path</a></li>
                     <li class="toggle"><a href="#">Trajectory</a></li>
                     <li class="toggle"><a href="#">Simulate</a></li>-->
+                    <li><h6 class="head-navbar">Robot Width:</h6></li>
+                    <li> <input type="text" class="form-control form-control-navbar"> </li>
+                    <li><h6 class="head-navbar">Max Velocity:</h6></li>
+                    <li> <input type="text" class="form-control form-control-navbar"> </li>
+                    <li><h6 class="head-navbar">Max Acceleration:</h6></li>
+                    <li> <input type="text" class="form-control form-control-navbar"> </li>
                 </ul>
             </div>
         </div>
@@ -128,14 +134,12 @@
 
             </div>
             <div id="download" class="solve-group"" style="display: none;">
+                    <h6 id="time-header"></h6>
+                
                 <div class="btn-group">
                     <a class="btn btn-success" onclick=""><i class="glyphicon glyphicon-download-alt"></i> GET</a>
                     <a class="btn btn-success" onclick="show_graph();"><i class="glyphicon glyphicon-stats"></i></a>
                 </div> 
-
-                <div> 
-                    <h6 id="version-header"></h6>
-                </div>
             </div>
 
             <div id="loader" class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>

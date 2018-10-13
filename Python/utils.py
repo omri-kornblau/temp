@@ -18,8 +18,31 @@ def delta_angle (angle1, angle2):
         delta += 2 * math.pi
     return delta
 
+class point(object):
+    """point in the path defined by the user"""
+    def __init__(self, x, y, angle):
+        self.x = x
+        self.y = y
+        self.angle = angle
+        
+        self.magnitude = 1
+        self.magnitude_factor = 1.2
+        self.dx = math.cos(angle)*self.magnitude
+        self.dy = math.sin(angle)*self.magnitude
+        self.ddx = 0
+        self.ddy = 0
+
+    def distance (self, point):
+        return math.sqrt((self.x-point.x)**2 + (self.y-point.y)**2)
+
+    def update_v (self, point):
+        self.magnitude = self.magnitude_factor*self.distance(point)
+        self.dx = math.cos(self.angle)*self.magnitude
+        self.dy = math.sin(self.angle)*self.magnitude
+
 class trajectory_point(object):
-    """docstring for xpoint"""
+    """single point in the path containes all
+     the trajectory data of the point"""
     def __init__(self, x=0, y=0, angle=0):
         self.time = 0
         self.y = y 
@@ -27,10 +50,10 @@ class trajectory_point(object):
         self.angle = angle
         
         self.right_vel = 0 
-        self.left_vel = 0
+        self.left_vel  = 0
         
         self.right_acc = 0
-        self.left_acc = 0
+        self.left_acc  = 0
 
         self.dist = 0
         self.left_dist  = 0
@@ -51,13 +74,6 @@ class trajectory_point(object):
             rad = self.dist/angle_diff
             self.left_dist = self.dist*((rad-width/2)/rad)
             self.right_dist = self.dist*((rad+width/2)/rad)
-
-    def update_velocities_forward (self, prev_point, max_vel):        
-        new_vel = sign(self.left_dist)*((2*prev_point.left_acc*abs(self.left_dist) + prev_point.left_vel**2))**0.5
-        self.left_vel = min(max_vel, new_vel, key=abs)
-
-        new_vel = sign(self.right_dist)*((2*prev_point.right_acc*abs(self.right_dist) + prev_point.right_vel**2))**0.5
-        self.right_vel = min(max_vel, new_vel, key=abs)
 
     def update_point_backward (self, prev_point, max_vel, max_acc, jerk):
         dt = prev_point.time - self.time
@@ -88,7 +104,13 @@ class trajectory_point(object):
                 cur_acc = (abs(self.right_vel-prev_point.right_vel))/dt 
                 self.right_acc  = min (cur_acc + jerk*dt, max_acc, key=abs) 
                 
-    def update_point(self, prev_point, max_vel, max_acc, jerk):
+    def update_point_forward(self, prev_point, max_vel, max_acc, jerk):
+        new_vel = sign(self.left_dist)*((2*prev_point.left_acc*abs(self.left_dist) + prev_point.left_vel**2))**0.5
+        self.left_vel = min(max_vel, new_vel, key=abs)
+
+        new_vel = sign(self.right_dist)*((2*prev_point.right_acc*abs(self.right_dist) + prev_point.right_vel**2))**0.5
+        self.right_vel = min(max_vel, new_vel, key=abs)
+
         dt_left  = self.left_dist/(self.left_vel + 10**(-8))
         dt_right = self.right_dist/(self.right_vel + 10**(-8))
 
@@ -127,6 +149,12 @@ class trajectory_point(object):
         self.right_acc = 0.1
         self.left_acc  = 0.1
 
-    def update_times (self, prev_point):
-        self.time = prev_point.time + 2*self.dist/(prev_point.left_vel+prev_point.right_vel)
-
+    def update_point (self, prev_point, move_dir):
+        if ((prev_point.left_vel + prev_point.right_vel) == 0):
+            dt = 0
+        else:
+            dt = 2*self.dist/(abs(prev_point.left_vel+prev_point.right_vel))
+        self.time = prev_point.time + dt
+        
+        if (move_dir < 0):
+            prev_point.right_vel, prev_point.left_vel = -1*prev_point.left_vel, -1*prev_point.right_vel

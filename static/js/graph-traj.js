@@ -32,7 +32,8 @@ function draw_traj () {
     ],
     chartPadding: {
       right: 40
-    }
+    },
+    lineSmooth: false
     });
 
     new Chartist.Line('#acc-chart', {
@@ -52,7 +53,8 @@ function draw_traj () {
     ],
     chartPadding: {
       right: 40
-    }
+    },
+    lineSmooth: false
     });
 }
 

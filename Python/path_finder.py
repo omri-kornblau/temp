@@ -9,29 +9,6 @@ import json
 import sys
 import utils
 
-class point(object):
-    """docstring for dot"""
-    def __init__(self, x, y, angle):
-        self.x = x
-        self.y = y
-        self.angle = angle
-        
-        self.magnitude = 1
-        self.magnitude_factor = 1.2
-        self.dx = math.cos(angle)*self.magnitude
-        self.dy = math.sin(angle)*self.magnitude
-        self.ddx = 0
-        self.ddy = 0
-        self.trajectory = []
-
-    def distance (self, point):
-        return math.sqrt((self.x-point.x)**2 + (self.y-point.y)**2)
-
-    def update_v (self, point):
-        self.magnitude = self.magnitude_factor*self.distance(point)
-        self.dx = math.cos(self.angle)*self.magnitude
-        self.dy = math.sin(self.angle)*self.magnitude
-
 class path_finder(object):
     """docstring for path_finder"""
     POS_COST    = 60000 #60000
@@ -73,7 +50,8 @@ class path_finder(object):
         self.update_scalars(scalars_x, scalars_y, len(args), params.get("poly", 3))
         self.update_poly(params.get("poly", 3))
         self.update_costs_weights(params);
-
+        self.trajectory = []
+    
     def create_linear_scalar(self, param):
         scalars = np.zeros(len(self.points[:-1]) * (self.HIGHEST_POLYNOM + 1)).\
                      reshape(len(self.points[:-1]), (self.HIGHEST_POLYNOM + 1))
@@ -354,14 +332,14 @@ class path_finder(object):
         else:
             opt.minimize(self.cost_function, np.ravel([self.scalars_x, self.scalars_y]), method = self.OPTIMIZE_FUNCTION)
 
-    def find_trajectory(self, width, max_vel=3.5, max_acc=8., jerk=100.):
+    def find_trajectory(self, width, max_vel, max_acc, jerk, move_dir, time_offset):
         tpoints = [trajectory_point(self.x(0, self.MIN), self.y(0, self.MIN))]
         tpoints[0].reset(max_acc)
 
         i = 0
         s = self.MAX
 
-        #run forward
+        #run forward 
         for path in range(self.path_amount):
             s -= self.MAX
             
@@ -369,6 +347,7 @@ class path_finder(object):
             end_ds = []
 
             while s < self.MAX:
+                #choose 's' increment
                 if (s*(path+1.0) < (self.END_S_THRES+(self.path_amount-1.0)*self.MAX)):
                     min_vel = abs(tpoints[i].left_vel+tpoints[i].right_vel)/2
                     new_ds = (min_vel*(self.TIME_QUANT/1000.0)) / ((self.dxds(path, s) ** 2 + self.dyds(path, s) ** 2)**0.5)
@@ -402,14 +381,11 @@ class path_finder(object):
 
                 tpoints[i+1].update_distances(tpoints[i], start_angle, end_angle, width)
 
-                tpoints[i+1].update_velocities_forward(tpoints[i], max_vel)
-
-                tpoints[i+1].update_point(tpoints[i], max_vel, max_acc, jerk)
+                tpoints[i+1].update_point_forward(tpoints[i], max_vel, max_acc, jerk)
 
                 i += 1
                 s += ds
 
-        sec_point_time = tpoints[1].time
         tpoints[-1].reset(max_acc)
 
         #run backward
@@ -417,24 +393,21 @@ class path_finder(object):
             tpoints[i-1].update_point_backward(tpoints[i], max_vel, max_acc, jerk)
             i -= 1
 
-        sec_point_time_after = tpoints[1].time
-        dt = sec_point_time - sec_point_time_after
-        
-        #choose minimum velocity and re calc time
-        tpoints[0].time = 0
-        for i in range(len(tpoints))[2:]:
-            #tpoints[i].time += dt
-            tpoints[i].update_times(tpoints[i-1])
-
-        traj = [trajectory_point(tpoints[0].x, tpoints[0].y, tpoints[0].angle)]
-        
-        t = 0
-        cycle = (20.0/1000.0) #ms
-        bias = tpoints[-1].time-math.floor(tpoints[-1].time/cycle)*cycle 
-
-        #interpolate
+        #re calc time by velocities
+        tpoints[0].time = time_offset
         for i in range(len(tpoints))[1:]:
-            p_time = (t+1)*cycle+bias 
+            tpoints[i].update_point(tpoints[i-1], move_dir)
+
+        #interpolate to 20 ms 
+        traj = [trajectory_point(tpoints[0].x, tpoints[0].y, tpoints[0].angle)]
+        t = 0
+        cycle = (20.0/1000.0) #s
+        #to make sure the last point is when V=0
+        bias = tpoints[-1].time-math.floor(tpoints[-1].time/cycle)*cycle 
+        traj[0].time = time_offset
+
+        for i in range(len(tpoints))[1:]:
+            p_time = (t+1)*cycle+bias+time_offset 
             while ((p_time <= tpoints[i].time) and (p_time >= tpoints[i-1].time)):
                 t += 1
                 
@@ -444,12 +417,12 @@ class path_finder(object):
                 dlv = tpoints[i].left_vel-tpoints[i-1].left_vel
                 drv = tpoints[i].right_vel-tpoints[i-1].right_vel
                 
-                traj[t].left_vel = (dlv/dt)*p_time - (dlv/dt)*tpoints[i-1].time + tpoints[i-1].left_vel
                 traj[t].right_vel = (drv/dt)*p_time - (drv/dt)*tpoints[i-1].time + tpoints[i-1].right_vel
+                traj[t].left_vel  = (dlv/dt)*p_time - (dlv/dt)*tpoints[i-1].time + tpoints[i-1].left_vel
                 traj[t].right_acc = (traj[t].right_vel - traj[t-1].right_vel)/cycle
-                traj[t].left_acc = (traj[t].left_vel - traj[t-1].left_vel)/cycle
+                traj[t].left_acc  = (traj[t].left_vel - traj[t-1].left_vel)/cycle
                 traj[t].time = p_time
-                p_time = (t+1)*cycle+bias
+                p_time = (t+1)*cycle+bias+time_offset
 
         self.trajectory = traj
     
@@ -496,7 +469,12 @@ def main(in_data):
     
     #set up path_finder objects
     for index, path_data in enumerate(in_data):
-        path_points = [point(path_point["x"], path_point["y"], path_point["heading"]) for path_point in path_data["points"]]
+        path_points = [utils.point(
+            path_point["x"],
+            path_point["y"],
+            path_point["heading"])
+            for path_point in path_data["points"]]
+        
         if (index>0):
             path_points[0].angle += math.pi
         paths.append(path_finder(
@@ -506,15 +484,21 @@ def main(in_data):
             *path_points))
         
     width = 0.65
+    time_offset = 0
+    move_dir = 1
     for path in paths:
         #the reason we are all here:
         path.find_scalars()
-        path.find_trajectory(width, 3.5, 8., 100.)
+        path.find_trajectory(width, 3.5, 8., 100., move_dir, time_offset)
         out_data["path"].append(path.create_path_data())
         out_data["traj"] = utils.merge_dicts(out_data["traj"], path.create_traj_data())
+        
+        time_offset = path.trajectory[-1].time
+        move_dir *= -1
 
     print (json.dumps(out_data))
 
+    #set this to True to open matplotlib for graphing
     if False:
         for path in paths:
             tpoints = path.trajectory

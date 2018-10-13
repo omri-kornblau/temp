@@ -232,6 +232,7 @@ function draw_field() {
     }
     
     document.getElementById("version-header").innerHTML = data_version + " / " + (parsed_data.length-1)
+    
     f_ctx.shadowBlur = 10;
     points.draw();
 
@@ -266,6 +267,10 @@ function new_version (push_item) {
   data_version++;
   clicked_graph = false;
   show_graph();
+  
+  let path_dur = get_traj_data()["time"][get_traj_data()["time"].length-1].toPrecision(3);
+  document.getElementById('time-header').innerHTML =  "Duration: " + path_dur + " s";
+  
   draw_field();
 }
 
