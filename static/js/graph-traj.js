@@ -17,10 +17,10 @@ function show_graph () {
 
 function draw_traj () {
   new Chartist.Line('#vel-chart', {
-    labels: [get_traj_data()["time"]],
+    labels: [appData.getTraj()["time"]],
     series: [
-      setToGraph(get_traj_data()["time"], get_traj_data()["right_vel"]),
-      setToGraph(get_traj_data()["time"], get_traj_data()["left_vel"])
+      setToGraph(appData.getTraj()["time"], appData.getTraj()["right_vel"]),
+      setToGraph(appData.getTraj()["time"], appData.getTraj()["left_vel"])
     ],}, {
     axisX: {
       type: Chartist.AutoScaleAxis,
@@ -37,17 +37,17 @@ function draw_traj () {
     });
 
     new Chartist.Line('#acc-chart', {
-    labels: [get_traj_data()["time"]],
+    labels: [appData.getTraj()["time"]],
     series: [
-      setToGraph(get_traj_data()["time"], get_traj_data()["right_acc"]),
-      setToGraph(get_traj_data()["time"], get_traj_data()["left_acc"])
+      setToGraph(appData.getTraj()["time"], appData.getTraj()["right_acc"]),
+      setToGraph(appData.getTraj()["time"], appData.getTraj()["left_acc"])
     ],}, {
     axisX: {
       type: Chartist.AutoScaleAxis,
       showGrid: true,
       showLabel: true,
     },
-      labels: [get_traj_data()["time"],get_traj_data()["time"]],
+      labels: [appData.getTraj()["time"],appData.getTraj()["time"]],
     plugins: [
       Chartist.plugins.zoom({onZoom : onZoomAcc})//{ onZoom: onZoom })
     ],

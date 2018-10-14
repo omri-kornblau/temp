@@ -12,7 +12,7 @@ const default_data = {path: [{"path_points":[],"scalars_x":[null], "scalars_y":[
 
 var parsed_data  = [default_data]; //stores all the data got from python 
 
-var points; //stores 'Points' object
+var appData;
 
 var clicked_graph = true;
 
@@ -112,8 +112,121 @@ class Points {
   }
 }
 
+class Params {
+  constructor () {
+    this.params = {};
+    this.update();
+  }
+
+  update () {
+    this.params["poly"] = Number(document.getElementById("polynom").value);
+    this.params["pos"] = Number(document.getElementById("position").value);
+    this.params["angle"] = Number(document.getElementById("angle").value);
+    this.params["radius"] = Number(document.getElementById("radius").value);
+    this.params["radius_cont"] = Number(document.getElementById("radius_cont").value);
+    this.params["length"] = Number(document.getElementById("length").value);
+    this.params["method"] = document.getElementById("method").checked;
+  }
+
+  load (path_data) {
+    document.getElementById("polynom").value = this.params["poly"]; 
+    document.getElementById("position").value = this.params["pos"]; 
+    document.getElementById("angle").value = this.params["angle"]; 
+    document.getElementById("radius").value = this.params["radius"]; 
+    document.getElementById("radius_cont").value = this.params["radius_cont"];
+    document.getElementById("length").value = this.params["length"]; 
+    document.getElementById("method").checked = this.params["method"]; 
+    
+    if (path_data[0]["costs"] != null) {
+    document.getElementById("pos_cost_val").innerHTML = path_data[0]["costs"]["pos_cost"].toPrecision(3);
+    document.getElementById("angle_cost_val").innerHTML = path_data[0]["costs"]["angle_cost"].toPrecision(3);
+    document.getElementById("radius_cost_val").innerHTML = path_data[0]["costs"]["radius_cost"].toPrecision(3);
+    document.getElementById("radius_cont_cost_val").innerHTML = path_data[0]["costs"]["radius_cont_cost"].toPrecision(3);
+    document.getElementById("length_cost_val").innerHTML = path_data[0]["costs"]["length_cost"].toPrecision(3);
+    }
+  }
+
+  getData () {
+    return(this.params);
+  }
+}
+
+class AppData {
+  constructor() {   
+    this.version = 0;
+    let defaultData = {
+      path: [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}],
+      traj: {},
+      points: new Points(),
+      params: new Params()};
+
+    this.solverData = [defaultData];
+  }
+
+  updateForms () {
+    this.solverData[this.version]["params"].load(this.solverData[this.version]["path"])    
+  }
+
+  newVersion (push_item) {
+    if (this.version < this.solverData.length) {
+      this.solverData.splice(this.version+1, this.solverData.length);
+    }
+
+    let defaultData = {
+      path: [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}],
+      traj: {},
+      points: new Points(),
+      params: new Params()};
+
+    this.solverData.push(defaultData);
+    this.version++;
+
+    this.solverData[this.version]["path"] = push_item["path"];
+    this.solverData[this.version]["traj"] = push_item["traj"];
+
+    this.updateForms();
+  }
+
+  reset () {
+    this.version = 0;
+    this.updateForms();
+  }
+
+  undo () {
+    if (this.version > 1) {
+      this.version --;
+      this.updateForms();
+    }
+  }
+
+  redo () {
+    if (this.version < this.solverData.length -1) {
+      this.version ++;
+      this.updateForms();
+    }
+  }
+
+  getParams () {
+    this.solverData[this.version]["params"].update();
+    return(this.solverData[this.version]["params"]);
+  }
+  getPoints () {
+    this.solverData[this.version]["points"].update();
+    return(this.solverData[this.version]["points"]);
+  }
+  getPath () {
+    return(this.solverData[this.version]["path"]);
+  }
+  getTraj () {
+    return(this.solverData[this.version]["traj"]); 
+  }
+  loadData (prevData) {
+    //this = prevData;
+  }
+}
+
 function point_hover (elem, hover) {
-  point = points.getPointByElement(elem);
+  point = appData.getPoints().getPointByElement(elem);
   if (hover) {
     point.size = POINT_SIZE*1.2;
     point.color = "rgba(255,255,255, 0.9)";
@@ -123,20 +236,12 @@ function point_hover (elem, hover) {
     point.color = "rgba(255,255,255, 0.5)";
   }
 
-  points.draw();
+  appData.getPoints().draw();
 }
 
 function get_mouse_pos (canvas, evt) {
   var rect = canvas.getBoundingClientRect();
   return {x: evt.clientX - rect.left, y: evt.clientY - rect.top};
-}
-
-function get_path_data () {
-  return(parsed_data[data_version]["path"]);
-}
-
-function get_traj_data () {
-  return(parsed_data[data_version]["traj"]);
 }
 
 function draw_path (path_points){
@@ -204,7 +309,7 @@ function draw_path (path_points){
 
 function init_field() {
   $("#loader").hide();
-
+  //$("#params_cont").blur();
   field_canvas = document.getElementById("field_canvas");
   points_canvas = document.getElementById("points_canvas");
 
@@ -212,11 +317,12 @@ function init_field() {
   p_ctx = points_canvas.getContext('2d');
   
   field_img = new Image;
-  points = new Points();
+
+  appData = new AppData();
 
   field_img.onload = function() {
     f_ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
-    points.draw();
+    appData.getPoints().draw();
   };
 
   field_img.src = 'static/img/field_background.png';
@@ -227,25 +333,16 @@ function draw_field() {
     f_ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
     f_ctx.shadowBlur = 0;
 
-    for (var i = 0; i < get_path_data().length; i++) {
-      draw_path(get_path_data()[i]["path_points"]);
+    for (var i = 0; i < appData.getPath().length; i++) {
+      draw_path(appData.getPath()[i]["path_points"]);
     }
     
     document.getElementById("version-header").innerHTML = data_version + " / " + (parsed_data.length-1)
     
     f_ctx.shadowBlur = 10;
-    points.draw();
+    appData.getPoints().draw();
 
     update_forms();
-}
-
-function update_costs () {
-  /* Missing here: 'for' loop to handle multiple paths costs*/
-  document.getElementById("pos_cost_val").innerHTML = get_path_data()[0]["costs"]["pos_cost"].toPrecision(3);
-  document.getElementById("angle_cost_val").innerHTML = get_path_data()[0]["costs"]["angle_cost"].toPrecision(3);
-  document.getElementById("radius_cost_val").innerHTML = get_path_data()[0]["costs"]["radius_cost"].toPrecision(3);
-  document.getElementById("radius_cont_cost_val").innerHTML = get_path_data()[0]["costs"]["radius_cont_cost"].toPrecision(3);
-  document.getElementById("length_cost_val").innerHTML = get_path_data()[0]["costs"]["length_cost"].toPrecision(3);
 }
 
 function update_forms () {
@@ -260,62 +357,45 @@ function update_forms () {
 
 //delete future changes and push new version of paths
 function new_version (push_item) {
-  if (data_version < parsed_data.length) {
-    parsed_data.splice(data_version+1, parsed_data.length);
-  }
-  parsed_data.push(push_item);
-  data_version++;
+  appData.newVersion(push_item);
   clicked_graph = false;
   show_graph();
   
-  let path_dur = get_traj_data()["time"][get_traj_data()["time"].length-1].toPrecision(3);
+  let path_dur = appData.getTraj()["time"][appData.getTraj()["time"].length-1].toPrecision(3);
   document.getElementById('time-header').innerHTML =  "Duration: " + path_dur + " s";
   
   draw_field();
 }
 
 function reset_data () {
-  data_version = 0;
-  parsed_data["path"] = [default_data];
+  appData.reset();
+  appData.getPoints().update();
   new_solve = true;
-  points.update();
   $("#download").hide(300);
   $(".traj-area").hide(200)
   clicked_graph = true;
   draw_field();
 }
 
-function reset_version() {
-  data_version = 0;
+function redo_change () {
+  appData.redo();
   draw_field();
 }
 
-function redo_change () {
-  if (data_version < parsed_data.length-1) {
-    data_version ++;
-    draw_field();
-    update_costs();
-  }
-}
-
 function undo_change () {
-  if (data_version > 0) {
-    data_version --;
-    draw_field();
-    update_costs();
-  }
+  appData.undo();
+  draw_field();
 }
 
 function add_point () {
   $('#points').append("<tr class='point move-cursor' class='point'>"+
     "<td class='x'><input class='form-control form-control-small' type='number' step='0.1' placeholder='X' oninput='reset_data()' value="+
-    Math.min(real_field_width,(points.getData()[points.amount-1]["x"]+1))+
-    "></td>"+
-    //1 +
+    //Math.min(real_field_width,(points.getData()[points.amount-1]["x"]+1))+
+    1 +
     "></td>" +
     "<td class='y'><input class='form-control form-control-small' type='number' step='0.1' placeholder='Y' oninput='reset_data()' value="+
-    Math.min(real_field_height,(points.getData()[points.amount-1]["y"]+1))+
-    //1 + 
+    //Math.min(real_field_height,(points.getData()[points.amount-1]["y"]+1))+
+    1 + 
     "></td>"+
     "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset_data()' value=0></td>"+
     "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset_data()' value='true'><span class='handle'></span></label></td>"+
@@ -328,42 +408,35 @@ function add_point () {
 }
 
 function delete_point (elem) {
-  if (points.amount > 1) {
+  if (appData.getPoints().amount > 1) {
     $(elem).parent().parent().remove();
     reset_data();
   }
 }
 
 function solve() {
-  points_data = points.getData();
-  var params = {};
-  
-  params["poly"] = Number(document.getElementById("polynom").value);
-  params["pos"] = Number(document.getElementById("position").value);
-  params["angle"] = Number(document.getElementById("angle").value);
-  params["radius"] = Number(document.getElementById("radius").value);
-  params["radius_cont"] = Number(document.getElementById("radius_cont").value);
-  params["length"] = Number(document.getElementById("length").value);
-  params["method"] = document.getElementById("method").checked;
+  let points_data = appData.getPoints().getData();
+  let params = appData.getParams().getData();
 
   var data=[];
   var start = 0;
   var path_num = 0;
+
   for(var i = 0; i < points_data.length; i++)  {
     if (i == points_data.length - 1) {
       data.push({
         "params": params, 
         "points":points_data.slice(start),
-        "scalars_x":get_path_data()[path_num]["scalars_x"], 
-        "scalars_y":get_path_data()[path_num]["scalars_y"]});
+        "scalars_x":appData.getPath()[path_num]["scalars_x"], 
+        "scalars_y":appData.getPath()[path_num]["scalars_y"]});
       }
 
     if (points_data[i]["switch"]  == "true") {   
       data.push({
         "params": params, 
         "points":points_data.slice(start, i + 1),
-        "scalars_x":get_path_data()[path_num]["scalars_x"], 
-        "scalars_y":get_path_data()[path_num]["scalars_y"]});
+        "scalars_x":appData.getPath()[path_num]["scalars_x"], 
+        "scalars_y":appData.getPath()[path_num]["scalars_y"]});
       start = i;
     
       if (!new_solve) {
@@ -372,6 +445,7 @@ function solve() {
     }
   }
 
+  //$("#params_cont").blur();
   $("#download").hide(300);
   $("#loader").show(300);
 
@@ -379,9 +453,9 @@ function solve() {
   
   $.post("http://127.0.0.1:3000/", {"data": data}, function(data, status) {
     $("#loader").hide(300);
+    //$("#params_cont").unblur();
     $("#download").show(300);
     new_solve = false;
     new_version(JSON.parse(data));
-    update_costs();
   });
 }
