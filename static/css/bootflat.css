@@ -2194,6 +2194,10 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
   -webkit-border-radius: 4px 4px 0 0;
      -moz-border-radius: 4px 4px 0 0;
 }
+
+.panel-heading: hover {
+  cursor: move;
+}
 .panel-title {
   font-size: 15px;
   text-align: center;
@@ -2701,12 +2705,14 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
 
 .form-control-navbar {
   margin-top: 12px;
-  width: 60px;
+  width: 180px;
   height: 26px;
   border-radius: 20px;
-  border-color: #003595;
+  border-color: #c8c8c8;
   color: white;
   background-color: #003595;
+  left:0;
+  right: 0;
 }
 
 .form-control-navbar:focus {
@@ -2734,14 +2740,14 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
 }
 
 .scrollbar {
-    height: 200px;
+    height: 150px;
     background: #fff;
     overflow-y: auto;
 }
 
 @media (max-height: 801px) {
   .scrollpan {
-    height: 120px;
+    height: 100px;
     background: #fff;
     overflow-y: auto;
   }
@@ -2749,7 +2755,7 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
 
 @media (min-height: 801px) {
   .scrollpan {
-    height: 200px;
+    height: 160px;
     background: #fff;
     overflow-y: auto;
   }
@@ -2787,6 +2793,16 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
   left: 0;
   background-size: contain;
   border-radius: 10px;
+}
+
+.collapsed {
+    -webkit-box-shadow: 1px 3px 6px rgb(100, 100, 100);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.panel-heading {
+   cursor: pointer; 
 }
 
 .scrollbar-primary::-webkit-scrollbar {

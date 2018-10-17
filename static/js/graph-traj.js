@@ -58,6 +58,11 @@ function draw_traj () {
     });
 }
 
+function setDuration (preText) {
+  let path_dur = appData.getTraj()["time"][appData.getTraj()["time"].length-1].toPrecision(3);
+  document.getElementById('time-header').innerHTML =  preText + path_dur + " s";
+}
+
 function onZoomVel(chart, reset) {
   resetVelFnc = reset;
   $('#vel-zoom-icon').show(200);
@@ -79,3 +84,4 @@ function resetAccGraph () {
   resetAccFnc = null;
   $('#acc-zoom-icon').hide(200);
 }
+

@@ -42,6 +42,15 @@ class Point {
     p_ctx.arc (this.data["x"]*px2m, this.data["y"]*px2m, this.size, 0, 2*Math.PI);
     p_ctx.fillStyle = this.color;
     p_ctx.fill();
+    p_ctx.beginPath();
+    let angle = this.data["heading"];
+    let armLen = 15;
+    p_ctx.strokeStyle = this.color;
+    p_ctx.moveTo(this.data["x"]*px2m, this.data["y"]*px2m);
+    p_ctx.lineTo(this.data["x"]*px2m+Math.cos(angle)*armLen, this.data["y"]*px2m+Math.sin(angle)*armLen);
+    p_ctx.lineCap = 'round';
+    p_ctx.lineWidth = 1;
+    p_ctx.stroke();
   }
 
   distance(point_x, point_y) {
@@ -61,6 +70,7 @@ class Points {
     this.points = [];
     this.amount = 0;
     this.update();
+    this.solvePoints = this.points;
   }
 
   update () {
@@ -70,7 +80,7 @@ class Points {
       this.points.push(new Point(points_elements[i]));
     }
     this.amount = points_elements.length;
-
+    
     this.add_handlers();
   }
 
@@ -86,10 +96,10 @@ class Points {
   getPointByElement (elem) {
     for (var i = 0; i < this.amount; i++) {
       if (this.points[i].element == elem) {
-        return this.points[i]
+        return this.points[i];
       }
     }
-    return null
+    return null;
   }
 
   add_handlers () {
@@ -101,14 +111,30 @@ class Points {
   }
 
   draw () {
-    p_ctx.shadowColor = '#101010';
-    p_ctx.shadowBlur = 10;
+    //p_ctx.shadowColor = '#101010';
+    //p_ctx.shadowBlur = 10;
 
     p_ctx.clearRect(0, 0, points_canvas.width, points_canvas.height);
 
     for (var i = 0; i < this.amount; i++){
       this.points[i].draw(pixel_meters);
     }
+  }
+
+  load () {
+    $('#points').html("");
+    for (var i = 0; i < this.solvePoints.length; i++) {
+      add_point(this.solvePoints[i].data["x"],
+                this.solvePoints[i].data["y"],
+                this.solvePoints[i].data["heading"],
+                this.solvePoints[i].data["switch"],
+                false);
+    }
+    this.points = this.solvePoints;
+  }
+
+  savePoints () {
+    this.solvePoints = this.points;
   }
 }
 
@@ -164,10 +190,11 @@ class AppData {
   }
 
   updateForms () {
-    this.solverData[this.version]["params"].load(this.solverData[this.version]["path"])    
+    this.solverData[this.version]["params"].load(this.solverData[this.version]["path"]);
+    this.solverData[this.version]["points"].load(this.solverData[this.version]["points"]);    
   }
 
-  newVersion (push_item) {
+  newVersion () {
     if (this.version < this.solverData.length) {
       this.solverData.splice(this.version+1, this.solverData.length);
     }
@@ -179,15 +206,19 @@ class AppData {
       params: new Params()};
 
     this.solverData.push(defaultData);
-    this.version++;
+    this.version ++;
 
-    this.solverData[this.version]["path"] = push_item["path"];
-    this.solverData[this.version]["traj"] = push_item["traj"];
+    this.solverData[this.version]["points"].update();
+    this.solverData[this.version]["points"].savePoints(); 
+  }
 
-    this.updateForms();
+  saveSolverData (solverData) {
+    this.solverData[this.version]["path"] = solverData["path"];
+    this.solverData[this.version]["traj"] = solverData["traj"];
   }
 
   reset () {
+    this.solverData[this.version]["points"].savePoints(); 
     this.version = 0;
     this.updateForms();
   }
@@ -207,11 +238,9 @@ class AppData {
   }
 
   getParams () {
-    this.solverData[this.version]["params"].update();
     return(this.solverData[this.version]["params"]);
   }
   getPoints () {
-    this.solverData[this.version]["points"].update();
     return(this.solverData[this.version]["points"]);
   }
   getPath () {
@@ -337,7 +366,7 @@ function draw_field() {
       draw_path(appData.getPath()[i]["path_points"]);
     }
     
-    document.getElementById("version-header").innerHTML = data_version + " / " + (parsed_data.length-1)
+    document.getElementById("version-header").innerHTML = appData.version + " / " + (appData.solverData.length-1)
     
     f_ctx.shadowBlur = 10;
     appData.getPoints().draw();
@@ -356,68 +385,89 @@ function update_forms () {
 }
 
 //delete future changes and push new version of paths
-function new_version (push_item) {
-  appData.newVersion(push_item);
+function new_version () {
   clicked_graph = false;
   show_graph();
   
-  let path_dur = appData.getTraj()["time"][appData.getTraj()["time"].length-1].toPrecision(3);
-  document.getElementById('time-header').innerHTML =  "Duration: " + path_dur + " s";
+  setDuration("Duration: ");
   
   draw_field();
+}
+
+function reset () {
+  appData.getPoints().update();
+  new_solve = true;
+  clicked_graph = true;
+  if (new_solve) {
+    $("#download").hide(300);
+    $(".traj-area").hide(200);
+  }
+  draw_field(); 
+}
+
+function change () {
+  appData.getPoints().update();
+  setDuration("Duration: ");
+  clicked_graph = true;
+  draw_field();
+  $("#download").show(100); 
 }
 
 function reset_data () {
   appData.reset();
-  appData.getPoints().update();
-  new_solve = true;
-  $("#download").hide(300);
-  $(".traj-area").hide(200)
-  clicked_graph = true;
-  draw_field();
+  reset();
 }
 
 function redo_change () {
   appData.redo();
-  draw_field();
+  change();
 }
 
 function undo_change () {
   appData.undo();
-  draw_field();
+  change();
 }
 
-function add_point () {
-  $('#points').append("<tr class='point move-cursor' class='point'>"+
-    "<td class='x'><input class='form-control form-control-small' type='number' step='0.1' placeholder='X' oninput='reset_data()' value="+
+function add_point (x=1, y=1, angle=0, reverse=false, draw=true) {
+  reverse = (reverse === true) ? "checked":"";
+
+  $('#points').append("<tr class='point move-cursor'>"+
+    "<td class='x'><input class='form-control form-control-small' type='number' step='0.1' placeholder='X' oninput='reset()' value="+
     //Math.min(real_field_width,(points.getData()[points.amount-1]["x"]+1))+
-    1 +
+    x +
     "></td>" +
-    "<td class='y'><input class='form-control form-control-small' type='number' step='0.1' placeholder='Y' oninput='reset_data()' value="+
+    "<td class='y'><input class='form-control form-control-small' type='number' step='0.1' placeholder='Y' oninput='reset()' value="+
     //Math.min(real_field_height,(points.getData()[points.amount-1]["y"]+1))+
-    1 + 
+    y + 
     "></td>"+
-    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset_data()' value=0></td>"+
-    "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset_data()' value='true'><span class='handle'></span></label></td>"+
+    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' value="+
+    angle*180/Math.PI + 
+    "></td>"+
+    "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset()' "+
+    reverse +
+    "><span class='handle'></span></label></td>"+
     "<td class='delete'><a class='btn btn-danger btn-small' onclick='delete_point(this)'>"+
     "<i class='glyphicon glyphicon-trash glyphicon-small'></i>"+
     "</a></td>"+
     "</tr>");
-  
-  reset_data();
+  if (draw) {
+    reset();
+  }
 }
 
 function delete_point (elem) {
   if (appData.getPoints().amount > 1) {
     $(elem).parent().parent().remove();
-    reset_data();
+    reset();
   }
 }
 
 function solve() {
   let points_data = appData.getPoints().getData();
   let params = appData.getParams().getData();
-
+  
+  appData.newVersion();
+  
   var data=[];
   var start = 0;
   var path_num = 0;
@@ -453,9 +503,11 @@ function solve() {
   
   $.post("http://127.0.0.1:3000/", {"data": data}, function(data, status) {
     $("#loader").hide(300);
-    //$("#params_cont").unblur();
     $("#download").show(300);
     new_solve = false;
-    new_version(JSON.parse(data));
+
+    appData.saveSolverData(JSON.parse(data))
+
+    new_version();
   });
 }
