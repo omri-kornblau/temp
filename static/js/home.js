@@ -19,7 +19,6 @@ var clicked_graph = true;
 var data_version = 0; //stores current data version
 var new_solve    = true; //whether there is data or not
 
-var robot_width  = 0.6 //Meters 
 var robot_height = 0.8 //Meters
 
 const POINT_SIZE = 5;
@@ -46,7 +45,7 @@ class Point {
     let angle = this.data["heading"];
     let armLen = 15;
     p_ctx.strokeStyle = this.color;
-    p_ctx.moveTo(this.data["x"]*px2m, this.data["y"]*px2m);
+    p_ctx.moveTo(this.data["x"]*px2m+Math.cos(angle)*this.size, this.data["y"]*px2m+Math.sin(angle)*this.size);
     p_ctx.lineTo(this.data["x"]*px2m+Math.cos(angle)*armLen, this.data["y"]*px2m+Math.sin(angle)*armLen);
     p_ctx.lineCap = 'round';
     p_ctx.lineWidth = 1;
@@ -104,15 +103,15 @@ class Points {
 
   add_handlers () {
     for (var i = 0; i < this.amount; i++)  {
-      this.points[i].element.addEventListener('mousemove', function () {point_hover(this, true);} );
+      this.points[i].element.addEventListener('mouseenter', function () {point_hover(this, true);} );
       this.points[i].element.addEventListener('click', function () {point_hover(this, true);} );
-      this.points[i].element.addEventListener('mouseout' , function () {point_hover(this, false);} );
+      this.points[i].element.addEventListener('mouseleave', function () {point_hover(this, false);} );
     }
   }
 
   draw () {
-    //p_ctx.shadowColor = '#101010';
-    //p_ctx.shadowBlur = 10;
+    p_ctx.shadowColor = '#101010';
+    p_ctx.shadowBlur = 4;
 
     p_ctx.clearRect(0, 0, points_canvas.width, points_canvas.height);
 
@@ -145,31 +144,29 @@ class Params {
   }
 
   update () {
-    this.params["poly"] = Number(document.getElementById("polynom").value);
-    this.params["pos"] = Number(document.getElementById("position").value);
-    this.params["angle"] = Number(document.getElementById("angle").value);
-    this.params["radius"] = Number(document.getElementById("radius").value);
-    this.params["radius_cont"] = Number(document.getElementById("radius_cont").value);
-    this.params["length"] = Number(document.getElementById("length").value);
-    this.params["method"] = document.getElementById("method").checked;
+    let input_elements = document.getElementsByClassName("form-control-param");
+    for (var i = 0; i < input_elements.length; i++) {
+      this.params[input_elements[i].getAttribute('id')] = Number(input_elements[i].value);
+    }
+    this.params['method'] = document.getElementById('method').checked;
   }
 
   load (path_data) {
-    document.getElementById("polynom").value = this.params["poly"]; 
-    document.getElementById("position").value = this.params["pos"]; 
-    document.getElementById("angle").value = this.params["angle"]; 
-    document.getElementById("radius").value = this.params["radius"]; 
-    document.getElementById("radius_cont").value = this.params["radius_cont"];
-    document.getElementById("length").value = this.params["length"]; 
-    document.getElementById("method").checked = this.params["method"]; 
-    
+    let input_elements = document.getElementsByClassName("form-control-param");
+    for (var i = 0; i < input_elements.length; i++) {
+      //handle cases where there are no costs (e.g. init)
+        input_elements[i].value = this.params[input_elements[i].getAttribute('id')]; 
+    }      
+
     if (path_data[0]["costs"] != null) {
-    document.getElementById("pos_cost_val").innerHTML = path_data[0]["costs"]["pos_cost"].toPrecision(3);
-    document.getElementById("angle_cost_val").innerHTML = path_data[0]["costs"]["angle_cost"].toPrecision(3);
-    document.getElementById("radius_cost_val").innerHTML = path_data[0]["costs"]["radius_cost"].toPrecision(3);
-    document.getElementById("radius_cont_cost_val").innerHTML = path_data[0]["costs"]["radius_cont_cost"].toPrecision(3);
-    document.getElementById("length_cost_val").innerHTML = path_data[0]["costs"]["length_cost"].toPrecision(3);
+        document.getElementById("pos_cost_val").innerHTML = path_data[0]["costs"]["pos_cost"].toPrecision(3);
+        document.getElementById("angle_cost_val").innerHTML = path_data[0]["costs"]["angle_cost"].toPrecision(3);
+        document.getElementById("radius_cost_val").innerHTML = path_data[0]["costs"]["radius_cost"].toPrecision(3);
+        document.getElementById("radius_cont_cost_val").innerHTML = path_data[0]["costs"]["radius_cont_cost"].toPrecision(3);
+        document.getElementById("length_cost_val").innerHTML = path_data[0]["costs"]["length_cost"].toPrecision(3);
     }
+
+    document.getElementById('method').checked = this.params['method'];
   }
 
   getData () {
@@ -180,6 +177,7 @@ class Params {
 class AppData {
   constructor() {   
     this.version = 0;
+    this.name = "untitled";
     let defaultData = {
       path: [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}],
       traj: {},
@@ -192,6 +190,7 @@ class AppData {
   updateForms () {
     this.solverData[this.version]["params"].load(this.solverData[this.version]["path"]);
     this.solverData[this.version]["points"].load(this.solverData[this.version]["points"]);    
+    document.getElementById("auto_name").value = this.name;
   }
 
   newVersion () {
@@ -215,12 +214,12 @@ class AppData {
   saveSolverData (solverData) {
     this.solverData[this.version]["path"] = solverData["path"];
     this.solverData[this.version]["traj"] = solverData["traj"];
+    this.solverData[this.version]["params"].load(this.solverData[this.version]["path"]);
   }
 
   reset () {
-    this.solverData[this.version]["points"].savePoints(); 
     this.version = 0;
-    this.updateForms();
+    this.updateForms() ;
   }
 
   undo () {
@@ -249,8 +248,30 @@ class AppData {
   getTraj () {
     return(this.solverData[this.version]["traj"]); 
   }
+
+  createTrajFile () {
+    const divider = "\t"
+    let output = ""
+    for (var i = 0; i < this.getTraj()  ["time"].length; i++) {
+      output += this.getTraj()["time"][i] + divider;
+      output += this.getTraj()["x"][i] + divider;
+      output += this.getTraj()["y"][i] + divider;
+      output += this.getTraj()["right_vel"][i] + divider;
+      output += this.getTraj()["left_vel"][i] + divider;
+      output += this.getTraj()["heading"][i] + divider;
+      output += "\n";
+    }
+    return output;
+  }
+
+  createDataFile () {
+    return JSON.stringify(this.solverData, null, 2);
+  }
+
   loadData (prevData) {
     //this = prevData;
+    
+    this.updateForms();
   }
 }
 
@@ -274,6 +295,7 @@ function get_mouse_pos (canvas, evt) {
 }
 
 function draw_path (path_points){
+  let robotWidth = appData.getParams().params["width"];
   f_ctx.beginPath();
   
   var inc = 2; 
@@ -293,11 +315,11 @@ function draw_path (path_points){
     x = x + Math.cos(alpha)*robot_height/2;
     y = y + Math.sin(alpha)*robot_height/2;
 
-    let xr = Math.cos(alpha+Math.PI/2)*robot_width/2 + x;
-    let yr = Math.sin(alpha+Math.PI/2)*robot_width/2 + y;
+    let xr = Math.cos(alpha+Math.PI/2)*robotWidth/2 + x;
+    let yr = Math.sin(alpha+Math.PI/2)*robotWidth/2 + y;
     
-    let xl = Math.cos(alpha-Math.PI/2)*robot_width/2 + x;
-    let yl = Math.sin(alpha-Math.PI/2)*robot_width/2 + y;
+    let xl = Math.cos(alpha-Math.PI/2)*robotWidth/2 + x;
+    let yl = Math.sin(alpha-Math.PI/2)*robotWidth/2 + y;
 
     f_ctx.arc (xr*pixel_meters, yr*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
     f_ctx.arc (xl*pixel_meters, yl*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
@@ -312,11 +334,11 @@ function draw_path (path_points){
     x = x + Math.cos(alpha+Math.PI)*robot_height/2;
     y = y + Math.sin(alpha+Math.PI)*robot_height/2;
 
-    xr = Math.cos(alpha+Math.PI/2)*robot_width/2 + x;
-    yr = Math.sin(alpha+Math.PI/2)*robot_width/2 + y;
+    xr = Math.cos(alpha+Math.PI/2)*robotWidth/2 + x;
+    yr = Math.sin(alpha+Math.PI/2)*robotWidth/2 + y;
     
-    xl = Math.cos(alpha-Math.PI/2)*robot_width/2 + x;
-    yl = Math.sin(alpha-Math.PI/2)*robot_width/2 + y;
+    xl = Math.cos(alpha-Math.PI/2)*robotWidth/2 + x;
+    yl = Math.sin(alpha-Math.PI/2)*robotWidth/2 + y;
 
     f_ctx.beginPath();
     f_ctx.arc (xr*pixel_meters, yr*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
@@ -325,8 +347,11 @@ function draw_path (path_points){
   }
 
   for (var i = 0; i < path_points.length; i+=inc){
-    var val = parseInt(i*100/path_points.length);
-    color = "hsl("+val+",100%,60%)";
+
+    let traj_i = parseInt(i*appData.getTraj()["left_vel"].length/path_points.length);
+    let vel_hue = ((appData.getTraj()["left_vel"][traj_i]+appData.getTraj()["right_vel"][traj_i])/2);
+    vel_hue = 100-parseInt(vel_hue*100/appData.getParams().getData()["max_vel"]);
+    color = "hsl("+vel_hue+",100%,60%)";
     f_ctx.fillStyle = color;
     f_ctx.beginPath();
     f_ctx.arc (path_points[i]["x"]*pixel_meters, path_points[i]["y"]*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
@@ -359,13 +384,14 @@ function init_field() {
 }
 
 function draw_field() {
+  if (!new_solve) {
     f_ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
     f_ctx.shadowBlur = 0;
 
-    for (var i = 0; i < appData.getPath().length; i++) {
-      draw_path(appData.getPath()[i]["path_points"]);
+      for (var i = 0; i < appData.getPath().length; i++) {
+        draw_path(appData.getPath()[i]["path_points"]);
+      }
     }
-    
     document.getElementById("version-header").innerHTML = appData.version + " / " + (appData.solverData.length-1)
     
     f_ctx.shadowBlur = 10;
@@ -375,7 +401,7 @@ function draw_field() {
 }
 
 function update_forms () {
-  if (Number(document.getElementById("polynom").value) != 5) {
+  if (Number(document.getElementById("poly").value) != 5) {
       document.getElementById("method").disabled = true;
       document.getElementById("method").checked = false;
     }
@@ -432,6 +458,9 @@ function add_point (x=1, y=1, angle=0, reverse=false, draw=true) {
   reverse = (reverse === true) ? "checked":"";
 
   $('#points').append("<tr class='point move-cursor'>"+
+    "<td class='delete'><a class='btn btn-link btn-small' onclick='align_robot(this)'>" + 
+    "<i class='glyphicon glyphicon-object-align-left glyphicon-small'></i>" +
+    "</a></td>" +
     "<td class='x'><input class='form-control form-control-small' type='number' step='0.1' placeholder='X' oninput='reset()' value="+
     //Math.min(real_field_width,(points.getData()[points.amount-1]["x"]+1))+
     x +
@@ -440,7 +469,7 @@ function add_point (x=1, y=1, angle=0, reverse=false, draw=true) {
     //Math.min(real_field_height,(points.getData()[points.amount-1]["y"]+1))+
     y + 
     "></td>"+
-    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' value="+
+    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
     angle*180/Math.PI + 
     "></td>"+
     "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset()' "+
@@ -450,16 +479,45 @@ function add_point (x=1, y=1, angle=0, reverse=false, draw=true) {
     "<i class='glyphicon glyphicon-trash glyphicon-small'></i>"+
     "</a></td>"+
     "</tr>");
+
   if (draw) {
     reset();
   }
 }
 
 function delete_point (elem) {
-  if (appData.getPoints().amount > 1) {
+  if (appData.getPoints().amount > 2) {
     $(elem).parent().parent().remove();
     reset();
   }
+}
+
+function align_robot (elem) {
+  let pointElem = elem.parentNode.parentNode;
+  appData.getPoints().getPointByElement(pointElem).data["x"] = appData.getParams().getData()["height"]/2;
+  pointElem.querySelectorAll('.x > input')[0].value = appData.getParams().getData()["height"]/2;
+  appData.getPoints().getPointByElement(pointElem).data["heading"] = 0;
+  pointElem.querySelectorAll('.heading > input')[0].value = 0;
+}
+
+function save_traj () {
+  const { dialog } = require('electron').remote;
+  const fs = require('fs');
+  const path = require('path');
+
+  options = {title: "Save Trajectory File", defaultPath: (appData.name + ".txt")}
+  console.log(dialog.showSaveDialog(options,(fileName) => {
+    if (fileName === undefined) {
+        return;
+    }
+
+    fs.writeFile(fileName, appData.createTrajFile(), (err) => {
+      if (err) console.log(err);
+    })
+
+    appData.name = path.basename(fileName).split('.txt')[0];
+    appData.updateForms();
+  }));
 }
 
 function solve() {

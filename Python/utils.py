@@ -18,6 +18,16 @@ def delta_angle (angle1, angle2):
         delta += 2 * math.pi
     return delta
 
+class Robot (object):
+    """defines robot's specs"""
+    def __init__(self, params):
+        self.max_vel = params.get("max_vel")
+        self.max_acc = params.get("max_acc")
+        self.jerk = params.get("jerk")
+        self.width_factor = 1.3
+        self.width = params.get("width")*self.width_factor
+        self.cycle = params.get("cycle")
+    
 class point(object):
     """point in the path defined by the user"""
     def __init__(self, x, y, angle):

@@ -27,13 +27,13 @@
         <div class="jumbotron">
         <div class="jumbotron-header" style="text-align: center">
             <div class="navbar navbar-inverse" role="navigation">
-                <ul class="nav navbar-nav" >
-                    <a class="navbar-brand" href="#" style="padding: 5px 15px;"><img src="static/img/logo-path.png" height="40"></a>
-                <!--<li class="toggle"><a href="#">Path</a></li>
-                    <li class="toggle"><a href="#">Trajectory</a></li>
-                    <li class="toggle"><a href="#">Simulate</a></li>-->
-                    <li> <input type="text" placeholder="Auto Name" id="autoName" class="form-control form-control-navbar"> </li>
-                </ul>
+                <a class="navbar-brand" href="#" style="padding: 5px 15px;"><img src="static/img/logo-path.png" height="40"></a>
+                <input type="text" placeholder="enter auto name.." onchange="appData.name = this.value" value="untitled" id="auto_name" class="form-control-navbar">
+                    <!-- <ul class="nav navbar-nav" >
+                    <li class="toggle"><a href="#">Path</a></li>
+                        <li class="toggle"><a href="#">Trajectory</a></li>
+                        <li class="toggle"><a href="#">Simulate</a></li>
+                    </ul> -->
             </div>
         </div>
             <div class="jumbotron-contents" style="text-align: center">
@@ -62,93 +62,110 @@
     <div class="container">
         <div class="col-md-5">
             <div class="panel panel-primary">
-                <div class="panel-heading" id="path-params-panel" aria-expanded="true" type="button" data-toggle="collapse" data-target="#path-params">
-                    <h3 class="panel-title">Path Parameters</h3>
+            <ul class="nav nav-tabs nav-justified">
+                <li class="active"><a data-toggle="tab" href="#traj-params-panel">Trajectory</a></li>
+                <li><a data-toggle="tab" href="#path-params-panel">Path</a></li>
+            </ul>
+
+            <div class="panel-body tab-content">
+                <div id="path-params-panel" class="tab-pane fade">
+                    <!-- <div class="panel-heading" type="button">
+                        <h3 class="panel-title">Path Parameters</h3>
+                    </div> -->
+                    <div class="" id="path-params">
+                        <div class="scrollpan scrollbar-primary">
+                            <div style ="margin-right: 20px">
+                              	<table class="table">
+                                    <!-- <thead>
+                                        <th>Name</th>
+                                        <th style="text-align: center">Value</th>
+                                        <th></th>
+                                    </thead> -->
+                              		<tbody>
+                                        <tr>
+                                            <td>Quintic Hermite</td>
+                                            <td><label class="toggle primary"><input id="method" type="checkbox" checked="true"><span class="handle"></span></label></td>
+                                        </tr>
+                                        <tr>
+                		                	<td>Power</td>
+                                            <td><input class="form-control form-control-param" type='number' oninput="draw_field()" id="poly" value=5></td>
+                		                </tr>
+                                        <tr>
+                                            <td>Radius</td>
+                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="radius" value=1 ></td>
+                                            <td><span class="badge badge-default" id="radius_cost_val">cost</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Radius Cont</td>
+                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="radius_cont" value=0.1 ></td>
+                                            <td><span class="badge badge-default" id="radius_cont_cost_val">cost</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Length</td>
+                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="length" value=0 ></td>
+                                          <td><span class="badge badge-default" id="length_cost_val">cost</span></td>
+                                        </tr>
+                		                <tr>
+                		                	<td>Position</td>
+                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="position" value=1 ></td>
+                                            <td><span class="badge badge-default" id="pos_cost_val">cost</span></td>
+                		                </tr>
+                		                <tr>
+                		                	<td>Angle</td>
+                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="angle" value=1 ></td>
+                                            <td><span class="badge badge-default" id="angle_cost_val">cost</span></td>
+                		                </tr>
+                              		</tbody>
+                              	</table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="panel-body collapse in" id="path-params">
-                    <div class="scrollpan scrollbar-primary">
-                        <div style ="margin-right: 20px">
-                          	<table class="table">
-                                <!-- <thead>
-                                    <th>Name</th>
-                                    <th style="text-align: center">Value</th>
-                                    <th></th>
-                                </thead> -->
-                          		<tbody>
-                                    <tr>
-                                        <td>Quintic Hermite</td>
-                                        <td><label class="toggle primary"><input id="method" type="checkbox" checked="true"><span class="handle"></span></label></td>
-                                    </tr>
-                                    <tr>
-            		                	<td>Power</td>
-                                        <td><input class="form-control form-control-param" type='number' oninput="draw_field()" id="polynom" value=5></td>
-            		                </tr>
-                                    <tr>
-                                        <td>Radius</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="radius" value=1 ></td>
-                                        <td><span class="badge badge-default" id="radius_cost_val">cost</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Radius Cont</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="radius_cont" value=0.1 ></td>
-                                        <td><span class="badge badge-default" id="radius_cont_cost_val">cost</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Length</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="length" value=0 ></td>
-                                      <td><span class="badge badge-default" id="length_cost_val">cost</span></td>
-                                    </tr>
-            		                <tr>
-            		                	<td>Position</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="position" value=1 ></td>
-                                        <td><span class="badge badge-default" id="pos_cost_val">cost</span></td>
-            		                </tr>
-            		                <tr>
-            		                	<td>Angle</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="angle" value=1 ></td>
-                                        <td><span class="badge badge-default" id="angle_cost_val">cost</span></td>
-            		                </tr>
-                          		</tbody>
-                          	</table>
+                <div id="traj-params-panel" class="tab-pane fade in active">
+                    <!-- <div class="panel-heading" type="button">
+                        <h3 class="panel-title">Trajectory Parameters</h3>
+                    </div> -->
+                    <div class="" id="traj-params">
+                        <div class="scrollpan scrollbar-primary">
+                            <div style ="margin-right: 20px">
+                                <table class="table">
+                                    <!-- <thead>
+                                        <th>Name</th>
+                                        <th style="text-align: center">Value</th>
+                                        <th></th>
+                                    </thead> -->
+                                    <tbody>
+                                        <tr>
+                                            <td>Max Velocity</td>
+                                            <td><input class="form-control form-control-param" type='number'  id="max_vel" value=3.5></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Max Acceleration</td>
+                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="max_acc" value=8 ></td>
+                                        </tr>
+                                        <tr>
+                                        <td>Jerk</td>
+                                            <td><input class="param form-control form-control-param" type='number' placeholder="enter val.." id="jerk" value=100 ></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Robot Wheels Width</td>
+                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="width" value=0.65 ></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Robot Height</td>
+                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="height" value=0.9 ></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Cycle time</td>
+                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="cycle" value=20></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="panel panel-primary">
-                <div class="panel-heading" id="traj-params-panel" type="button" data-toggle="collapse" data-target="#traj-params">
-                    <h3 class="panel-title">Trajectory Parameters</h3>
-                </div>
-                <div class="panel-body collapse in" id="traj-params">
-                    <div class="scrollpan scrollbar-primary">
-                        <div style ="margin-right: 20px">
-                            <table class="table">
-                                <!-- <thead>
-                                    <th>Name</th>
-                                    <th style="text-align: center">Value</th>
-                                    <th></th>
-                                </thead> -->
-                                <tbody>
-                                    <tr>
-                                        <td>Max Velocity</td>
-                                        <td><input class="form-control form-control-param" type='number' oninput="draw_field()" id="maxVec" value=5></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Max Acceleration</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="maxAcc" value=1 ></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Robot Width</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="radius_cont" value=0.1 ></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Dt</td>
-                                        <td><input class="form-control form-control-param" type='number' placeholder="cost" id="length" value=0 ></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
         <div class="col-md-2" style="text-align: center">
@@ -167,25 +184,25 @@
                     <h6 id="time-header"></h6>
                 
                 <div class="btn-group">
-                    <a class="btn btn-success" onclick=""><i class="glyphicon glyphicon-download-alt"></i> GET</a>
+                    <a class="btn btn-success" onclick="save_traj()"><i class="glyphicon glyphicon-download-alt"></i> SAVE</a>
                     <a class="btn btn-success" onclick="show_graph();"><i class="glyphicon glyphicon-stats"></i></a>
                 </div> 
             </div>
 
             <div id="loader" class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
         </div>
-        
         <div class="col-md-5">
             <div class="panel panel-primary">
               <div class="panel-heading" style="text-align: center;">
                 <a class="panel-title">Points <!--    <a class="btn btn-link" style="color:white;"><i class="glyphicon glyphicon-plus-sign"></i></a> --></a>
-                
               </div>
+
               <div class="panel-body">
                 <div class="scrollpan scrollbar-primary">
                     <div style="margin-right: 20px;">
                         <table class="table-condensed">
                         <thead>
+                            <th> </th>
                             <th>X</th>
                             <th>Y</th>
                             <th>Heading</th>
@@ -193,24 +210,23 @@
                         </thead>
                         <tbody  id="points">
                             <tr class="point move-cursor">
-                                <!-- <td><i class="glyphicon glyphicon-minus" style="float: left; padding-top: 7px; color: #8c8c8c; margin-right: 10px"></i></td> -->   
+                                <td class='delete'><a class="btn btn-link btn-small" onclick='align_robot(this)'><i class="glyphicon glyphicon-object-align-left glyphicon-small"></i></a></td>
                                 <td class='x'><input class="form-control form-control-small" type='number' step="0.1" placeholder="X" oninput="reset()" value=1 ></td>
                                 <td class='y'><input class="form-control form-control-small" type='number' step="0.1" placeholder="Y" oninput="reset()" value=1 ></td>
-                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=90 ></td>
-                                <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset()"><span class="handle"></span></label></td>
+                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=90 step="5"></td>
+                                <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset(this)"><span class="handle"></span></label></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"
                                     onclick='delete_point(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
                                     </a></td> 
                             </tr>
-                            <tr class="point move-cursor" class="point">
-                                <!-- <td><i class="glyphicon glyphicon-minus" style="float: left; padding-top: 7px; color: #8c8c8c; margin-right: 10px"></i></td> -->   
+                            <tr class="point move-cursor">
+                                <td class='delete'><a class="btn btn-link btn-small" onclick='align_robot(this)'><i class="glyphicon glyphicon-object-align-left glyphicon-small"></i></a></td>
                                 <td class='x'><input class="form-control form-control-small" type='number' step="0.1" placeholder="X" oninput="reset()" value=2 ></td>
                                 <td class='y'><input class="form-control form-control-small" type='number' step="0.1" placeholder="Y" oninput="reset()" value=2 ></td>
-                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=0 ></td>
+                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=0 step="5"></td>
                                 <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset()"><span class="handle"></span></label></td>
-                                <td class='delete'><a class="btn btn-danger btn-small"
-                                    onclick='delete_point(this)'>
+                                <td class='delete'><a class="btn btn-danger btn-small"onclick='delete_point(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
                                     </a></td> 
                             </tr>
