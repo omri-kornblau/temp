@@ -10,7 +10,7 @@ var path = require('path');
 function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({width: 1200, height: 800, icon: path.join(__dirname, 'static/img/favicon.png')})
-
+    
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')
 

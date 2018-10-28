@@ -27,6 +27,27 @@ const PATH_SIZE  = 1;
 const real_field_width  = 16; //Meters
 const real_field_height = 8; //Meters
 
+function toPrec (inp ,prec) {
+  ans = inp*Math.pow(10, prec);
+  ans = Math.round(ans, 0)/Math.pow(10, prec);
+  return(String(ans));
+}
+
+function angleRange (angle, radians=true) {
+  if (radians) {
+    angle *= -180/Math.PI;
+  }
+
+  while (angle >= 360) {
+    angle -= 360;
+  }
+ 
+  while (angle < 0) {
+    angle += 360;
+  }
+  return (angle);
+}
+
 class Point {
   constructor(elem) {
     this.color = "rgba(255,255,255, 0.5)";
@@ -249,16 +270,16 @@ class AppData {
     return(this.solverData[this.version]["traj"]); 
   }
 
-  createTrajFile () {
+  createTrajFile (prec=3) {
     const divider = "\t"
     let output = ""
     for (var i = 0; i < this.getTraj()  ["time"].length; i++) {
-      output += this.getTraj()["time"][i] + divider;
-      output += this.getTraj()["x"][i] + divider;
-      output += this.getTraj()["y"][i] + divider;
-      output += this.getTraj()["right_vel"][i] + divider;
-      output += this.getTraj()["left_vel"][i] + divider;
-      output += this.getTraj()["heading"][i] + divider;
+      output += toPrec(this.getTraj()["time"][i], prec) + divider;
+      output += toPrec(-1*this.getTraj()["y"][i], prec) + divider; //patch to handle inverted axis
+      output += toPrec(this.getTraj()["x"][i], prec) + divider;
+      output += toPrec(this.getTraj()["right_vel"][i], prec) + divider;
+      output += toPrec(this.getTraj()["left_vel"][i], prec) + divider;
+      output += toPrec(angleRange(this.getTraj()["heading"][i]), prec) + divider;
       output += "\n";
     }
     return output;
@@ -349,7 +370,7 @@ function draw_path (path_points){
   for (var i = 0; i < path_points.length; i+=inc){
 
     let traj_i = parseInt(i*appData.getTraj()["left_vel"].length/path_points.length);
-    let vel_hue = ((appData.getTraj()["left_vel"][traj_i]+appData.getTraj()["right_vel"][traj_i])/2);
+    let vel_hue = Math.abs((appData.getTraj()["left_vel"][traj_i]+appData.getTraj()["right_vel"][traj_i])/2);
     vel_hue = 100-parseInt(vel_hue*100/appData.getParams().getData()["max_vel"]);
     color = "hsl("+vel_hue+",100%,60%)";
     f_ctx.fillStyle = color;
@@ -501,7 +522,7 @@ function align_robot (elem) {
 }
 
 function save_traj () {
-  const { dialog } = require('electron').remote;
+  const {dialog} = require('electron').remote;
   const fs = require('fs');
   const path = require('path');
 
@@ -521,15 +542,16 @@ function save_traj () {
 }
 
 function solve() {
+  appData.getPoints().update();
+  appData.getParams().update();
+  
   let points_data = appData.getPoints().getData();
   let params = appData.getParams().getData();
-  
-  appData.newVersion();
   
   var data=[];
   var start = 0;
   var path_num = 0;
-
+  
   for(var i = 0; i < points_data.length; i++)  {
     if (i == points_data.length - 1) {
       data.push({
@@ -538,26 +560,27 @@ function solve() {
         "scalars_x":appData.getPath()[path_num]["scalars_x"], 
         "scalars_y":appData.getPath()[path_num]["scalars_y"]});
       }
-
-    if (points_data[i]["switch"]  == "true") {   
-      data.push({
-        "params": params, 
-        "points":points_data.slice(start, i + 1),
-        "scalars_x":appData.getPath()[path_num]["scalars_x"], 
-        "scalars_y":appData.getPath()[path_num]["scalars_y"]});
-      start = i;
-    
-      if (!new_solve) {
-        path_num++;
-      }  
-    }
-  }
-
-  //$("#params_cont").blur();
-  $("#download").hide(300);
-  $("#loader").show(300);
-
-  var data = JSON.stringify(data);
+      
+      if (points_data[i]["switch"]  == "true") {   
+        data.push({
+          "params": params, 
+          "points":points_data.slice(start, i + 1),
+          "scalars_x":appData.getPath()[path_num]["scalars_x"], 
+          "scalars_y":appData.getPath()[path_num]["scalars_y"]});
+          start = i;
+          
+          if (!new_solve) {
+            path_num++;
+          }  
+        }
+      }
+      appData.newVersion();
+      
+      //$("#params_cont").blur();
+      $("#download").hide(300);
+      $("#loader").show(300);
+      
+      var data = JSON.stringify(data);
   
   $.post("http://127.0.0.1:3000/", {"data": data}, function(data, status) {
     $("#loader").hide(300);

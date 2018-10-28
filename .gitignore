@@ -125,3 +125,5 @@ node_modules/color-name/
 node_modules/moment/
 
 node_modules/chartjs-color/
+
+\.vscode/settings\.json

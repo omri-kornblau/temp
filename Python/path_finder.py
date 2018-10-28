@@ -49,7 +49,7 @@ class path_finder(object):
         
         self.update_scalars(scalars_x, scalars_y, len(args), params.get("poly", 3))
         self.update_poly(params.get("poly", 3))
-        self.update_costs_weights(params);
+        self.update_costs_weights(params)
         self.trajectory = []
     
     def create_linear_scalar(self, param):
@@ -99,7 +99,7 @@ class path_finder(object):
             scalars[index][2] = 0.5*p0.ddy
             scalars[index][3] = -10*p0.y-6*p0.dy-1.5*p0.ddy+0.5*p1.ddy-4*p1.dy+10*p1.y
             scalars[index][4] = 15*p0.y+8*p0.dy+1.5*p0.ddy-p1.ddy+7*p1.dy-15*p1.y
-            scalars[index][5] = -6*p0.y-3*p0.dy-0.5*p0.ddy+0.5*p1.ddy-3*p1.dy+6*p1.y;
+            scalars[index][5] = -6*p0.y-3*p0.dy-0.5*p0.ddy+0.5*p1.ddy-3*p1.dy+6*p1.y
 
         return scalars
 
@@ -239,8 +239,8 @@ class path_finder(object):
             counter = 0
 
         for index in range(self.path_amount - 1):
-            curv = self.radius(index, self.MAX+0.000001)
-            last_curv = self.radius(index+1, self.MIN+0.000001)
+            curv = self.radius(index, self.MAX-0.000000001)
+            last_curv = self.radius(index+1, self.MIN+0.000000001)
             #curv = math.sqrt(self.d2xds2(index, self.MAX)**2+self.d2yds2(index, self.MAX)**2)
             #last_curv = math.sqrt(self.d2xds2(index+1, self.MIN)**2+self.d2yds2(index+1, self.MIN)**2)
             
@@ -306,7 +306,7 @@ class path_finder(object):
         costs_weighted["radius_cost"]      = self.RADIUS_COST * self.costs["radius_cost"]
         costs_weighted["radius_cont_cost"] = self.RADIUS_CONT_COST * self.costs["radius_cont_cost"]
         costs_weighted["length_cost"]      = self.LENGTH_COST * self.costs["length_cost"]
-        costs_weighted["mag_size_cost"]    = 10 * self.costs["mag_size_cost"]
+        costs_weighted["mag_size_cost"]    = 0 * self.costs["mag_size_cost"]
         return sum(costs_weighted.values())
 
     def get_costs(self):
@@ -390,31 +390,38 @@ class path_finder(object):
         for i in range(len(tpoints))[1:]:
             tpoints[i].update_point(tpoints[i-1], move_dir)
 
-        #interpolate to 20 ms 
+        #interpolate to cycle time 
         traj = [trajectory_point(tpoints[0].x, tpoints[0].y, tpoints[0].angle)]
         t = 0
-        robot.cycle = (20.0/1000.0) #s
+        cycle = (robot.cycle/1000.0) #s
         #calc bias to make sure the last point is when V=0
-        bias = tpoints[-1].time-math.floor(tpoints[-1].time/robot.cycle)*robot.cycle 
+        bias = tpoints[-1].time-math.floor(tpoints[-1].time/cycle)*cycle 
         traj[0].time = time_offset
-
+        
         for i in range(len(tpoints))[1:]:
-            p_time = (t+1)*robot.cycle+bias+time_offset 
+            p_time = (t+1)*cycle+bias+time_offset 
             while ((p_time <= tpoints[i].time) and (p_time >= tpoints[i-1].time)):
                 t += 1
                 
                 traj.append(trajectory_point(tpoints[i].x, tpoints[i].y, tpoints[i].angle))
                 
                 dt  = tpoints[i].time-tpoints[i-1].time
-                dlv = tpoints[i].left_vel-tpoints[i-1].left_vel
-                drv = tpoints[i].right_vel-tpoints[i-1].right_vel
                 
-                traj[t].right_vel = (drv/dt)*p_time - (drv/dt)*tpoints[i-1].time + tpoints[i-1].right_vel
-                traj[t].left_vel  = (dlv/dt)*p_time - (dlv/dt)*tpoints[i-1].time + tpoints[i-1].left_vel
-                traj[t].right_acc = (traj[t].right_vel - traj[t-1].right_vel)/robot.cycle
-                traj[t].left_acc  = (traj[t].left_vel - traj[t-1].left_vel)/robot.cycle
+                dlv = (tpoints[i].left_vel-tpoints[i-1].left_vel)/dt
+                drv = (tpoints[i].right_vel-tpoints[i-1].right_vel)/dt
+                dx  = (tpoints[i].x - tpoints[i-1].x)/dt
+                dy  = (tpoints[i].y - tpoints[i-1].y)/dt
+                da  = (utils.delta_angle(tpoints[i].angle, tpoints[i-1].angle))/dt
+                
+                traj[t].x = dx*p_time - dx*tpoints[i-1].time + tpoints[i-1].x
+                traj[t].y = dy*p_time - dy*tpoints[i-1].time + tpoints[i-1].y
+                traj[t].angle = (da*p_time - da*tpoints[i-1].time + tpoints[i-1].angle) % (2*math.pi)
+                traj[t].right_vel = drv*p_time - drv*tpoints[i-1].time + tpoints[i-1].right_vel
+                traj[t].left_vel  = dlv*p_time - dlv*tpoints[i-1].time + tpoints[i-1].left_vel
+                traj[t].right_acc = (traj[t].right_vel - traj[t-1].right_vel)/cycle
+                traj[t].left_acc  = (traj[t].left_vel - traj[t-1].left_vel)/cycle
                 traj[t].time = p_time
-                p_time = (t+1)*robot.cycle+bias+time_offset
+                p_time = (t+1)*cycle+bias+time_offset
 
         self.trajectory = traj
     
@@ -494,7 +501,7 @@ def main(in_data):
     print (json.dumps(out_data))
 
     #set this to True to open matplotlib for graphing
-    if False:
+    if True:
         for path in paths:
             tpoints = path.trajectory
 

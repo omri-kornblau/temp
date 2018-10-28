@@ -2890,18 +2890,6 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
   stroke: #101010;
 }
 
-.ct-line {
-  stroke-dasharray: 5000;
-  stroke-dashoffset: 5000;
-  animation: dash 4s linear forwards;
-}
-
-@keyframes dash {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
 .lds-ellipsis {
   display: inline-block;
   position: relative;

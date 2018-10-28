@@ -12,10 +12,11 @@ def sign (num):
 
 def delta_angle (angle1, angle2):
     delta = angle1 - angle2
-    if  delta > math.pi:
-        delta -= 2 * math.pi
-    elif delta < -math.pi:
-        delta += 2 * math.pi
+    while  delta > math.pi:
+        delta -= 2*math.pi
+    while delta < -math.pi:
+        delta += 2*math.pi
+
     return delta
 
 class Robot (object):
@@ -77,14 +78,16 @@ class trajectory_point(object):
 
         angle_diff = delta_angle(self.angle, angle0)
 
-        if (abs(angle_diff) < 10**(-10)):
-            self.left_dist = self.dist
-            self.right_dist = self.dist
-        else:
-            rad = self.dist/angle_diff
-            self.left_dist = self.dist*((rad-width/2)/rad)
-            self.right_dist = self.dist*((rad+width/2)/rad)
-
+        # if (abs(angle_diff) < 10**(-10)):
+        #     self.left_dist = self.dist
+        #     self.right_dist = self.dist
+        # else:
+        #     rad = self.dist/angle_diff
+        #     self.left_dist = self.dist*((rad-width/2)/rad)
+        #     self.right_dist = self.dist*((rad+width/2)/rad)
+        self.left_dist = self.dist + angle_diff*width/2
+        self.right_dist = self.dist - angle_diff*width/2
+        
     def update_point_backward (self, prev_point, max_vel, max_acc, jerk):
         dt = prev_point.time - self.time
         
