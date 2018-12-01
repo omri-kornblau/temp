@@ -1,21 +1,21 @@
 var resetVelFnc;
 var resetAccFnc;
 
-function show_graph () {
-  clicked_graph = !clicked_graph
-  if (clicked_graph) {
+function showGraph () {
+  clickedGraph = !clickedGraph
+  if (clickedGraph) {
     $(".traj-area").hide(200)
   }
   else {
     $(".traj-area").show(200) 
     
     setTimeout(function() {
-      draw_traj();        
+      drawGraph();        
     }, 200);
   }
 }
 
-function draw_traj () {
+function drawGraph () {
   new Chartist.Line('#vel-chart', {
     labels: [appData.getTraj()["time"]],
     series: [

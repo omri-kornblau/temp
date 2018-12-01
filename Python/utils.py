@@ -1,5 +1,4 @@
 from __future__ import division
-
 import math
 
 def merge_dicts (dol1, dol2):
@@ -78,13 +77,6 @@ class trajectory_point(object):
 
         angle_diff = delta_angle(self.angle, angle0)
 
-        # if (abs(angle_diff) < 10**(-10)):
-        #     self.left_dist = self.dist
-        #     self.right_dist = self.dist
-        # else:
-        #     rad = self.dist/angle_diff
-        #     self.left_dist = self.dist*((rad-width/2)/rad)
-        #     self.right_dist = self.dist*((rad+width/2)/rad)
         self.left_dist = self.dist + angle_diff*width/2
         self.right_dist = self.dist - angle_diff*width/2
         
@@ -167,7 +159,10 @@ class trajectory_point(object):
             dt = 0
         else:
             dt = 2*self.dist/(abs(prev_point.left_vel+prev_point.right_vel))
+        
         self.time = prev_point.time + dt
         
         if (move_dir < 0):
             prev_point.right_vel, prev_point.left_vel = -1*prev_point.left_vel, -1*prev_point.right_vel
+            self.angle = delta_angle(self.angle, math.pi)
+        

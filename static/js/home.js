@@ -1,30 +1,30 @@
-//var data = "";
-var f_ctx;
-var p_ctx;
+//let data = "";
+let f_ctx;
+let p_ctx;
 
-var field_img;
-var field_canvas;
+let field_img;
+let field_canvas;
 
-var points_canvas;
-var pixel_meters;
+let points_canvas;
+let pixel_meters;
 
 const default_data = {path: [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}]}
 
-var parsed_data  = [default_data]; //stores all the data got from python 
+let parsed_data  = [default_data]; //stores all the data got from python 
 
-var appData;
+let appData;
 
-var clicked_graph = true;
+let clickedGraph = true;
 
-var data_version = 0; //stores current data version
-var new_solve    = true; //whether there is data or not
+let data_version = 0; //stores current data version
+let newSolve    = true; //whether there is data or not
 
-var robot_height = 0.8 //Meters
+let robot_height = 0.8 //Meters
 
 const POINT_SIZE = 5;
 const PATH_SIZE  = 1;
 
-const real_field_width  = 16; //Meters
+const real_field_width  = 8; //Meters
 const real_field_height = 8; //Meters
 
 function toPrec (inp ,prec) {
@@ -33,7 +33,7 @@ function toPrec (inp ,prec) {
   return(String(ans));
 }
 
-function angleRange (angle, radians=true) {
+function putAngleInRange (angle, radians=true) {
   if (radians) {
     angle *= -180/Math.PI;
   }
@@ -96,7 +96,7 @@ class Points {
   update () {
     this.points = [];
     let points_elements = document.getElementsByClassName("point");
-    for (var i = 0; i < points_elements.length; i++) {
+    for (let i = 0; i < points_elements.length; i++) {
       this.points.push(new Point(points_elements[i]));
     }
     this.amount = points_elements.length;
@@ -107,14 +107,14 @@ class Points {
   getData () {
     this.update();
     let points = [];
-    for (var i = 0; i < this.amount; i++) {
+    for (let i = 0; i < this.amount; i++) {
       points.push(this.points[i].data);
     } 
     return (points);
   }
 
   getPointByElement (elem) {
-    for (var i = 0; i < this.amount; i++) {
+    for (let i = 0; i < this.amount; i++) {
       if (this.points[i].element == elem) {
         return this.points[i];
       }
@@ -123,28 +123,28 @@ class Points {
   }
 
   add_handlers () {
-    for (var i = 0; i < this.amount; i++)  {
-      this.points[i].element.addEventListener('mouseenter', function () {point_hover(this, true);} );
-      this.points[i].element.addEventListener('click', function () {point_hover(this, true);} );
-      this.points[i].element.addEventListener('mouseleave', function () {point_hover(this, false);} );
+    for (let i = 0; i < this.amount; i++)  {
+      this.points[i].element.addEventListener('mouseenter', function () {pointHover(this, true);} );
+      this.points[i].element.addEventListener('click', function () {pointHover(this, true);} );
+      this.points[i].element.addEventListener('mouseleave', function () {pointHover(this, false);} );
     }
   }
 
   draw () {
     p_ctx.shadowColor = '#101010';
-    p_ctx.shadowBlur = 4;
+    //p_ctx.shadowBlur = 4;
 
     p_ctx.clearRect(0, 0, points_canvas.width, points_canvas.height);
 
-    for (var i = 0; i < this.amount; i++){
+    for (let i = 0; i < this.amount; i++){
       this.points[i].draw(pixel_meters);
     }
   }
 
   load () {
     $('#points').html("");
-    for (var i = 0; i < this.solvePoints.length; i++) {
-      add_point(this.solvePoints[i].data["x"],
+    for (let i = 0; i < this.solvePoints.length; i++) {
+      addPoint(this.solvePoints[i].data["x"],
                 this.solvePoints[i].data["y"],
                 this.solvePoints[i].data["heading"],
                 this.solvePoints[i].data["switch"],
@@ -166,7 +166,7 @@ class Params {
 
   update () {
     let input_elements = document.getElementsByClassName("form-control-param");
-    for (var i = 0; i < input_elements.length; i++) {
+    for (let i = 0; i < input_elements.length; i++) {
       this.params[input_elements[i].getAttribute('id')] = Number(input_elements[i].value);
     }
     this.params['method'] = document.getElementById('method').checked;
@@ -174,7 +174,7 @@ class Params {
 
   load (path_data) {
     let input_elements = document.getElementsByClassName("form-control-param");
-    for (var i = 0; i < input_elements.length; i++) {
+    for (let i = 0; i < input_elements.length; i++) {
       //handle cases where there are no costs (e.g. init)
         input_elements[i].value = this.params[input_elements[i].getAttribute('id')]; 
     }      
@@ -270,18 +270,20 @@ class AppData {
     return(this.solverData[this.version]["traj"]); 
   }
 
-  createTrajFile (prec=3) {
+  createTrajFile (precision=3) {
     const divider = "\t"
     let output = ""
-    for (var i = 0; i < this.getTraj()  ["time"].length; i++) {
-      output += toPrec(this.getTraj()["time"][i], prec) + divider;
-      output += toPrec(-1*this.getTraj()["y"][i], prec) + divider; //patch to handle inverted axis
-      output += toPrec(this.getTraj()["x"][i], prec) + divider;
-      output += toPrec(this.getTraj()["right_vel"][i], prec) + divider;
-      output += toPrec(this.getTraj()["left_vel"][i], prec) + divider;
-      output += toPrec(angleRange(this.getTraj()["heading"][i]), prec) + divider;
+    
+    for (let i = 0; i < this.getTraj()  ["time"].length; i++) {
+      output += toPrec(this.getTraj()["time"][i], precision) + divider;
+      output += toPrec(-1*this.getTraj()["y"][i], precision) + divider; //patch to handle inverted axis
+      output += toPrec(this.getTraj()["x"][i], precision) + divider;
+      output += toPrec(this.getTraj()["right_vel"][i], precision) + divider;
+      output += toPrec(this.getTraj()["left_vel"][i], precision) + divider;
+      output += toPrec(putAngleInRange(this.getTraj()["heading"][i]), precision) + divider;
       output += "\n";
     }
+
     return output;
   }
 
@@ -296,7 +298,7 @@ class AppData {
   }
 }
 
-function point_hover (elem, hover) {
+function pointHover (elem, hover) {
   point = appData.getPoints().getPointByElement(elem);
   if (hover) {
     point.size = POINT_SIZE*1.2;
@@ -311,17 +313,17 @@ function point_hover (elem, hover) {
 }
 
 function get_mouse_pos (canvas, evt) {
-  var rect = canvas.getBoundingClientRect();
+  let rect = canvas.getBoundingClientRect();
   return {x: evt.clientX - rect.left, y: evt.clientY - rect.top};
 }
 
-function draw_path (path_points){
+function drawPath (path_points){
   let robotWidth = appData.getParams().params["width"];
   f_ctx.beginPath();
   
-  var inc = 2; 
-  for (var i = 0; i < path_points.length - inc; i+=inc){
-    var val = parseInt(i*100/path_points.length);
+  let inc = 2; 
+  for (let i = 0; i < path_points.length - inc; i+=inc){
+    let val = parseInt(i*100/path_points.length);
     color = "#bbbbbb";
     f_ctx.fillStyle = color;
     f_ctx.beginPath();
@@ -367,7 +369,7 @@ function draw_path (path_points){
     f_ctx.fill();
   }
 
-  for (var i = 0; i < path_points.length; i+=inc){
+  for (let i = 0; i < path_points.length; i+=inc){
 
     let traj_i = parseInt(i*appData.getTraj()["left_vel"].length/path_points.length);
     let vel_hue = Math.abs((appData.getTraj()["left_vel"][traj_i]+appData.getTraj()["right_vel"][traj_i])/2);
@@ -382,7 +384,7 @@ function draw_path (path_points){
   f_ctx.closePath();
 }
 
-function init_field() {
+function initField() {
   $("#loader").hide();
   //$("#params_cont").blur();
   field_canvas = document.getElementById("field_canvas");
@@ -400,28 +402,29 @@ function init_field() {
     appData.getPoints().draw();
   };
 
-  field_img.src = 'static/img/field_background.png';
+  field_img.src = 'static/img/field_background_half.png';
   pixel_meters = field_canvas.width/real_field_width;
 }
 
-function draw_field() {
-  if (!new_solve) {
+function drawField(cleanPath=false) {
+  if (!newSolve) {
     f_ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
-    f_ctx.shadowBlur = 0;
-
-      for (var i = 0; i < appData.getPath().length; i++) {
-        draw_path(appData.getPath()[i]["path_points"]);
+    //f_ctx.shadowBlur = 0; shadows will make render slower
+      if(!cleanPath) {
+        for (let i = 0; i < appData.getPath().length; i++) {
+          drawPath(appData.getPath()[i]["path_points"]);
+        }
       }
     }
     document.getElementById("version-header").innerHTML = appData.version + " / " + (appData.solverData.length-1)
     
-    f_ctx.shadowBlur = 10;
+    //f_ctx.shadowBlur = 10;
     appData.getPoints().draw();
 
-    update_forms();
+    updateForms();
 }
 
-function update_forms () {
+function updateForms () {
   if (Number(document.getElementById("poly").value) != 5) {
       document.getElementById("method").disabled = true;
       document.getElementById("method").checked = false;
@@ -432,31 +435,32 @@ function update_forms () {
 }
 
 //delete future changes and push new version of paths
-function new_version () {
-  clicked_graph = false;
-  show_graph();
+function newVersion() {
+  clickedGraph = false;
+
+  showGraph();
   
   setDuration("Duration: ");
   
-  draw_field();
+  drawField();
 }
 
-function reset () {
+function reset(cleanPath=true) {
   appData.getPoints().update();
-  new_solve = true;
-  clicked_graph = true;
-  if (new_solve) {
+  newSolve = true;
+  clickedGraph = true;
+  if (newSolve) {
     $("#download").hide(300);
     $(".traj-area").hide(200);
   }
-  draw_field(); 
+  drawField(cleanPath); 
 }
 
 function change () {
   appData.getPoints().update();
   setDuration("Duration: ");
-  clicked_graph = true;
-  draw_field();
+  clickedGraph = true;
+  drawField(false);
   $("#download").show(100); 
 }
 
@@ -475,19 +479,22 @@ function undo_change () {
   change();
 }
 
-function add_point (x=1, y=1, angle=0, reverse=false, draw=true) {
+function addPoint (x=-1, y=-1, angle=0, reverse=false, draw=true) {
   reverse = (reverse === true) ? "checked":"";
 
+  if (x < 0) {
+    x = Math.min(real_field_width,(appData.getPoints().getData()[appData.getPoints().amount-1]["x"]+1));
+    y = Math.min(real_field_width,(appData.getPoints().getData()[appData.getPoints().amount-1]["y"]+1));
+  }
+
   $('#points').append("<tr class='point move-cursor'>"+
-    "<td class='delete'><a class='btn btn-link btn-small' onclick='align_robot(this)'>" + 
+    "<td class='delete'><a class='btn btn-link btn-small' onclick='alignRobot(this)'>" + 
     "<i class='glyphicon glyphicon-object-align-left glyphicon-small'></i>" +
     "</a></td>" +
-    "<td class='x'><input class='form-control form-control-small' type='number' step='0.1' placeholder='X' oninput='reset()' value="+
-    //Math.min(real_field_width,(points.getData()[points.amount-1]["x"]+1))+
-    x +
+    "<td class='x'><input class='form-control form-control-small' type='number' step='0.1' placeholder='X' oninput='reset()' value=" +
+    x + 
     "></td>" +
-    "<td class='y'><input class='form-control form-control-small' type='number' step='0.1' placeholder='Y' oninput='reset()' value="+
-    //Math.min(real_field_height,(points.getData()[points.amount-1]["y"]+1))+
+    "<td class='y'><input class='form-control form-control-small' type='number' step='0.1' placeholder='Y' oninput='reset()' value=" +
     y + 
     "></td>"+
     "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
@@ -496,7 +503,7 @@ function add_point (x=1, y=1, angle=0, reverse=false, draw=true) {
     "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset()' "+
     reverse +
     "><span class='handle'></span></label></td>"+
-    "<td class='delete'><a class='btn btn-danger btn-small' onclick='delete_point(this)'>"+
+    "<td class='delete'><a class='btn btn-danger btn-small' onclick='deletePoint(this)'>"+
     "<i class='glyphicon glyphicon-trash glyphicon-small'></i>"+
     "</a></td>"+
     "</tr>");
@@ -506,14 +513,14 @@ function add_point (x=1, y=1, angle=0, reverse=false, draw=true) {
   }
 }
 
-function delete_point (elem) {
+function deletePoint (elem) {
   if (appData.getPoints().amount > 2) {
     $(elem).parent().parent().remove();
     reset();
   }
 }
 
-function align_robot (elem) {
+function alignRobot (elem) {
   let pointElem = elem.parentNode.parentNode;
   appData.getPoints().getPointByElement(pointElem).data["x"] = appData.getParams().getData()["height"]/2;
   pointElem.querySelectorAll('.x > input')[0].value = appData.getParams().getData()["height"]/2;
@@ -521,7 +528,7 @@ function align_robot (elem) {
   pointElem.querySelectorAll('.heading > input')[0].value = 0;
 }
 
-function save_traj () {
+function saveTraj () {
   const {dialog} = require('electron').remote;
   const fs = require('fs');
   const path = require('path');
@@ -541,18 +548,20 @@ function save_traj () {
   }));
 }
 
-function solve() {
+//The function is called to solve things with python
+//Command can be 0, 1 or 2 --> path+traj, path, traj
+function solve(command=0) {
   appData.getPoints().update();
   appData.getParams().update();
   
   let points_data = appData.getPoints().getData();
   let params = appData.getParams().getData();
   
-  var data=[];
-  var start = 0;
-  var path_num = 0;
+  let data=[];
+  let start = 0;
+  let path_num = 0;
   
-  for(var i = 0; i < points_data.length; i++)  {
+  for(let i = 0; i < points_data.length; i++)  {
     if (i == points_data.length - 1) {
       data.push({
         "params": params, 
@@ -569,7 +578,7 @@ function solve() {
           "scalars_y":appData.getPath()[path_num]["scalars_y"]});
           start = i;
           
-          if (!new_solve) {
+          if (!newSolve) {
             path_num++;
           }  
         }
@@ -580,15 +589,15 @@ function solve() {
       $("#download").hide(300);
       $("#loader").show(300);
       
-      var data = JSON.stringify(data);
+      let sentData = JSON.stringify({'data': data, 'cmd': command});
   
-  $.post("http://127.0.0.1:3000/", {"data": data}, function(data, status) {
+  $.post("http://127.0.0.1:3000/", {'data': sentData}, function(data, status) {
     $("#loader").hide(300);
     $("#download").show(300);
-    new_solve = false;
+    newSolve = false;
 
     appData.saveSolverData(JSON.parse(data))
 
-    new_version();
+    newVersion();
   });
 }

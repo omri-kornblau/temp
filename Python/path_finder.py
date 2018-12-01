@@ -38,16 +38,16 @@ class path_finder(object):
     DEFAULT_DS = 0.000001
     END_S_THRES = 0.97    
 
-    def __init__(self, params, scalars_x, scalars_y, *args):
+    def __init__(self, params, scalars_x, scalars_y, *points):
         """
-        each parameter shold be a tuple of (x, y, angle)
+        each parameter should be a tuple of (x, y, angle)
         """
         self.costs = {}
-        self.points = args
+        self.points = points
         self.path_amount = len(self.points)-1
         self.quintic = params.get("method")
         
-        self.update_scalars(scalars_x, scalars_y, len(args), params.get("poly", 3))
+        self.update_scalars(scalars_x, scalars_y, len(points), params.get("poly", 3))
         self.update_poly(params.get("poly", 3))
         self.update_costs_weights(params)
         self.trajectory = []
@@ -325,7 +325,8 @@ class path_finder(object):
             opt.minimize(self.cost_function, np.ravel([self.scalars_x, self.scalars_y]), method = self.OPTIMIZE_FUNCTION)
 
     def find_trajectory(self, robot, move_dir, time_offset):
-        tpoints = [trajectory_point(self.x(0, self.MIN), self.y(0, self.MIN))]
+        first_point_angle = math.atan2(self.dyds(0, self.MIN), self.dxds(0, self.MIN))
+        tpoints = [trajectory_point(self.x(0, self.MIN), self.y(0, self.MIN), first_point_angle)]
         tpoints[0].reset(robot.max_acc)
 
         i = 0
@@ -339,17 +340,19 @@ class path_finder(object):
             end_ds = []
 
             while s < self.MAX:
-                #choose 's' increment
+                #choose 's' increment called ds according to the velocity
                 if (s*(path+1.0) < (self.END_S_THRES+(self.path_amount-1.0)*self.MAX)):
                     min_vel = abs(tpoints[i].left_vel+tpoints[i].right_vel)/2
                     new_ds = (min_vel*(self.TIME_QUANT/1000.0)) / ((self.dxds(path, s) ** 2 + self.dyds(path, s) ** 2)**0.5)
 
                     ds = max(new_ds, self.DEFAULT_DS)
                      
-                    #too high ds protection   
+                    #Protection from too high ds   
                     if ds > 0.01:
                         ds = 0.001
 
+                    #Store all the ds's of the begininng to use in the end
+                    #of the path when the velocity is higher
                     if (s < (self.MAX-self.END_S_THRES)):
                         end_ds.append(ds)
                         ds_index += 1
@@ -412,7 +415,7 @@ class path_finder(object):
                 dx  = (tpoints[i].x - tpoints[i-1].x)/dt
                 dy  = (tpoints[i].y - tpoints[i-1].y)/dt
                 da  = (utils.delta_angle(tpoints[i].angle, tpoints[i-1].angle))/dt
-                
+
                 traj[t].x = dx*p_time - dx*tpoints[i-1].time + tpoints[i-1].x
                 traj[t].y = dy*p_time - dy*tpoints[i-1].time + tpoints[i-1].y
                 traj[t].angle = (da*p_time - da*tpoints[i-1].time + tpoints[i-1].angle) % (2*math.pi)
@@ -421,6 +424,7 @@ class path_finder(object):
                 traj[t].right_acc = (traj[t].right_vel - traj[t-1].right_vel)/cycle
                 traj[t].left_acc  = (traj[t].left_vel - traj[t-1].left_vel)/cycle
                 traj[t].time = p_time
+    
                 p_time = (t+1)*cycle+bias+time_offset
 
         self.trajectory = traj
@@ -458,14 +462,15 @@ class path_finder(object):
 
         return data
 
-def main(in_data):
+def main(data_from_js):
     paths = []
-    #out_data = {path:[], traj:{x:[], y:[], left_vel:[], right_vel:[], heading:[]}}
     out_data  = {'path':[], 'traj':{}}
     out_data['traj'] = {'time':[], 'x':[], 'y':[], 'left_vel':[], 'right_vel':[], 'left_acc':[], 'right_acc':[], 'heading':[]}
-    
-    in_data = json.loads(in_data)
-    
+    parsed_from_js = json.loads(data_from_js)
+
+    in_data = parsed_from_js['data']
+    cmd = parsed_from_js['cmd']
+
     #set up path_finder objects
     for index, path_data in enumerate(in_data):
         path_points = [utils.point(
@@ -474,13 +479,15 @@ def main(in_data):
             path_point["heading"])
             for path_point in path_data["points"]]
         
-        if (index>0):
+        if (index > 0):
             path_points[0].angle += math.pi
+
         paths.append(path_finder(
             path_data["params"], 
             path_data["scalars_x"],
             path_data["scalars_y"],
             *path_points))
+    
     #setup robot object
     robot = utils.Robot(path_data["params"])
     
@@ -488,7 +495,9 @@ def main(in_data):
     move_dir = 1
     for path in paths:
         #the reason we are all here:
-        path.find_scalars()
+        if (cmd == 0):
+            path.find_scalars()
+
         path.find_trajectory(robot, move_dir, time_offset)
 
         #set data to be sent to GUI
@@ -498,10 +507,10 @@ def main(in_data):
         time_offset = path.trajectory[-1].time
         move_dir *= -1
 
-    print (json.dumps(out_data))
+    print(json.dumps(out_data))
 
     #set this to True to open matplotlib for graphing
-    if True:
+    if False:
         for path in paths:
             tpoints = path.trajectory
 

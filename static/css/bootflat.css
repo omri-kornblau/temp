@@ -183,10 +183,10 @@ blockquote {
     border-color: transparent;  
 }
 
-
 .btn-link:hover, .btn-link:focus {
   text-decoration: underline;
 }
+
 .btn-default {
   color: #0045a5;
   border-color: #001535 !important;
@@ -2785,7 +2785,7 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
 @media (min-width: 768px) {
   .canvas-wraper {
     position: relative;
-    width: 680px;
+    width: 340px;
     height: 340px; 
     margin: 0px auto; 
     border-radius: 10px;
@@ -2796,7 +2796,7 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
 @media (max-width: 768px) {
   .canvas-wraper {
     position: relative;
-    width: 500px;
+    width: 250px;
     height: 250px; 
     margin: 0px auto; 
     border-radius: 10px;
@@ -2888,6 +2888,18 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
 .ct-zoom-rect {
   fill: rgba(255, 255, 255, 0.3);
   stroke: #101010;
+}
+
+.ct-line {
+  stroke-dasharray: 5000;
+  stroke-dashoffset: 5000;
+  animation: dash 4s linear forwards;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 .lds-ellipsis {

@@ -64,8 +64,6 @@ const server = http.createServer((req, res) => {
         });
         req.on('end', () => {
             var input = decodeURIComponent(body).split("=")[1];
-            console.log(input);
-
             var PythonShell = require('python-shell');
 	    if (process.platform === "linux") {
            	var options = {
@@ -76,8 +74,8 @@ const server = http.createServer((req, res) => {
            	   args: [input]
            	};
 	    }
-	    else {
-		var options = {
+      else {
+		    var options = {
            	   mode: 'text',
            	   pythonPath: 'C:\\Python37\\python.exe',
            	   pythonOptions: ['-u'], // get print results in real-time
@@ -85,10 +83,10 @@ const server = http.createServer((req, res) => {
            	   args: [input]
            	};
 	    }
-            var pyshell = new PythonShell(python_script, options);
-            pyshell.on('message', function (message) {
-              // received a message sent from the Python script (a simple "print" statement)
-              res.end(message);
+        var pyshell = new PythonShell(python_script, options);
+        pyshell.on('message', function (message) {
+          // received a message sent from the Python script (a simple "print" statement)
+            res.end(message);
             });
 
             pyshell.end(function (err,code,signal) {if (err) throw err;});
