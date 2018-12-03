@@ -30,12 +30,12 @@ class Robot (object):
     
 class point(object):
     """point in the path defined by the user"""
-    def __init__(self, x, y, angle):
+    def __init__(self, x, y, angle, mag=1):
         self.x = x
         self.y = y
         self.angle = angle
         
-        self.magnitude = 1
+        self.magnitude = mag
         self.magnitude_factor = 1.2
         self.dx = math.cos(angle)*self.magnitude
         self.dy = math.sin(angle)*self.magnitude
@@ -46,9 +46,10 @@ class point(object):
         return math.sqrt((self.x-point.x)**2 + (self.y-point.y)**2)
 
     def update_v (self, point):
-        self.magnitude = self.magnitude_factor*self.distance(point)
+        # self.magnitude = self.magnitude_factor*self.distance(point)*0.5
         self.dx = math.cos(self.angle)*self.magnitude
         self.dy = math.sin(self.angle)*self.magnitude
+        pass
 
 class trajectory_point(object):
     """single point in the path containes all
@@ -94,6 +95,7 @@ class trajectory_point(object):
 
                 #master acc 
                 self.right_acc  = min(prev_point.right_acc + jerk*dt, max_acc, key=abs)
+
                 #slave acc
                 cur_acc = (abs(self.left_vel-prev_point.left_vel))/dt
                 self.left_acc  = min (cur_acc + jerk*dt, max_acc, key=abs) 
@@ -105,6 +107,7 @@ class trajectory_point(object):
                 
                 #master acc
                 self.left_acc  = min(prev_point.left_acc + jerk*dt, max_acc, key=abs)
+                
                 #slave acc
                 cur_acc = (abs(self.right_vel-prev_point.right_vel))/dt 
                 self.right_acc  = min (cur_acc + jerk*dt, max_acc, key=abs) 

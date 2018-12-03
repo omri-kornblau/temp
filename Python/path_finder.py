@@ -4,10 +4,12 @@ from scipy import optimize as opt
 from utils import trajectory_point
 
 import numpy as np
+import random 
 import math
 import json
 import sys
 import utils
+
 
 class path_finder(object):
     """docstring for path_finder"""
@@ -20,9 +22,9 @@ class path_finder(object):
     HIGHEST_POLYNOM = 5
     MIN = 0.
     MAX = 1.
-    RES = 0.1
+    RES = 0.05
     OPTIMIZE_FUNCTION = 'BFGS' #Need to make solver test..
-    QUINTIC_OPTIMIZE_FUNCTION = 'Nelder-Mead'
+    QUINTIC_OPTIMIZE_FUNCTION = 'BFGS'
     #'Nelder-Mead' 'Powell' 'CG' 'BFGS' 'Newton-CG' 'L-BFGS-B' 'TNC' 'COBYLA' 'SLSQP' 'trust-constr' 'dogleg' 'trust-ncg' 'trust-exact' 'trust-krylov'
     POWERS = []
     length_cost_val = 0
@@ -51,6 +53,7 @@ class path_finder(object):
         self.update_poly(params.get("poly", 3))
         self.update_costs_weights(params)
         self.trajectory = []
+        self.regulator = (np.random.rand(int((self.path_amount+1)*(1/self.RES) + 1)) - 0.5)*self.RES/100
     
     def create_linear_scalar(self, param):
         scalars = np.zeros(len(self.points[:-1]) * (self.HIGHEST_POLYNOM + 1)).\
@@ -134,7 +137,7 @@ class path_finder(object):
     def update_costs_weights (self, params):
         self.POS_COST         = params.get("position", 1)*6000000000
         self.ANGLE_COST       = params.get("angle", 1)*6000000000
-        self.RADIUS_COST      = params.get("radius", 1)*100
+        self.RADIUS_COST      = params.get("radius", 1)*0.1
         self.RADIUS_CONT_COST = params.get("radius_cont", 1)*.001
         self.LENGTH_COST      = params.get("length", 0)*0.00001
 
@@ -185,9 +188,11 @@ class path_finder(object):
         d2x = self.d2xds2(index, s)
         dy = self.dyds(index, s)
         d2y = self.d2yds2(index, s)
+
         if (((d2x * dy) - (d2y * dx)) == 0):
             return (float(10**5))
-        return ((dx ** 2) + (dy ** 2))**1.5 / ((d2x * dy) - (d2y * dx))
+        
+        return ((dx**2) + (dy**2))**1.5 / ((d2x*dy) - (d2y*dx))
     
     def get_position_costs(self):
         cost = 0.
@@ -212,18 +217,24 @@ class path_finder(object):
     def get_radius_cost(self):
         cost = 0
         counter = 0
+        # if not self.temp_rad_bool:
+        #     regulator = random.random()*self.RES/2-self.RES
+
+        # self.temp_rad_bool = not self.temp_rad_bool
+
         for index in range(self.path_amount):
-            #for s in ( np.cbrt(((np.arange(self.MIN, self.MAX + self.RES,  self.RES))-0.5)*2)*0.5 + 0.5):
+            # for s in ( np.cbrt(((np.arange(self.MIN, self.MAX + self.RES,  self.RES))-0.5)*2)*0.5 + 0.5):
             for s in np.arange(self.MIN, self.MAX + self.RES,  self.RES):
-                dx = self.dxds(index, s)
-                d2x = self.d2xds2(index, s)
-                dy = self.dyds(index, s)
-                d2y = self.d2yds2(index, s)
-
-                cost +=  (((d2x * dy) - (d2y * dx)) / ((dx ** 2) + (dy ** 2))**1.5)**4
-
-                self.length_cost_val += math.sqrt((self.dxds(index, s)/self.RES)**2 + (self.dyds(index, s)/self.RES)**2)
+                regulator = self.regulator[counter]
                 
+                dx = self.dxds(index, s+regulator)
+                d2x = self.d2xds2(index, s+regulator)
+                dy = self.dyds(index, s+regulator)
+                d2y = self.d2yds2(index, s+regulator)
+
+                cost +=  (((d2x*dy) - (d2y*dx))/((dx**2) + (dy**2))**1.5)**4
+
+                # self.length_cost_val += math.sqrt((self.dxds(index, s)/self.RES)**2 + (self.dyds(index, s)/self.RES)**2)
                 counter += 1
         cost /= counter
         return cost
@@ -239,8 +250,8 @@ class path_finder(object):
             counter = 0
 
         for index in range(self.path_amount - 1):
-            curv = self.radius(index, self.MAX-0.000000001)
-            last_curv = self.radius(index+1, self.MIN+0.000000001)
+            curv = self.radius(index, self.MAX + 1e-6)
+            last_curv = self.radius(index+1, self.MIN - 1e-6)
             #curv = math.sqrt(self.d2xds2(index, self.MAX)**2+self.d2yds2(index, self.MAX)**2)
             #last_curv = math.sqrt(self.d2xds2(index+1, self.MIN)**2+self.d2yds2(index+1, self.MIN)**2)
             
@@ -255,7 +266,7 @@ class path_finder(object):
     def get_mag_size_cost (self):
         cost = 0
         for point in self.points:
-            mag = point.magnitude_factor
+            mag = point.magnitude
             #cost += ((point.magnitude_factor-1.2))**6 #(0.1**2)*((point.magnitude_factor-1.2))**2
             cost += 415+(-843)*mag+602*(mag**2)+(-177)*(mag**3)+18.5*(mag**4)
         return cost
@@ -284,11 +295,10 @@ class path_finder(object):
         return sum(costs_weighted.values())
 
     def quintic_cost_function(self, args):
-        
         for index, point in enumerate(self.points):
             point.ddx = args[index*3]
             point.ddy = args[index*3+1]
-            point.magnitude_factor = args[index*3+2]
+            point.magnitude = args[index*3+2]
         
         self.scalars_x = self.create_quintic_scalar_x()
         self.scalars_y = self.create_quintic_scalar_y()
@@ -307,6 +317,7 @@ class path_finder(object):
         costs_weighted["radius_cont_cost"] = self.RADIUS_CONT_COST * self.costs["radius_cont_cost"]
         costs_weighted["length_cost"]      = self.LENGTH_COST * self.costs["length_cost"]
         costs_weighted["mag_size_cost"]    = 0 * self.costs["mag_size_cost"]
+        
         return sum(costs_weighted.values())
 
     def get_costs(self):
@@ -318,7 +329,7 @@ class path_finder(object):
             for point in self.points:
                 args.append(point.ddx)
                 args.append(point.ddy)
-                args.append(point.magnitude_factor)
+                args.append(point.magnitude)
 
             opt.minimize(self.quintic_cost_function, args, method = self.QUINTIC_OPTIMIZE_FUNCTION)
         else:
@@ -326,6 +337,10 @@ class path_finder(object):
 
     def find_trajectory(self, robot, move_dir, time_offset):
         first_point_angle = math.atan2(self.dyds(0, self.MIN), self.dxds(0, self.MIN))
+        
+        if move_dir < 0:
+            first_point_angle = utils.delta_angle(first_point_angle, math.pi)
+
         tpoints = [trajectory_point(self.x(0, self.MIN), self.y(0, self.MIN), first_point_angle)]
         tpoints[0].reset(robot.max_acc)
 
@@ -398,7 +413,7 @@ class path_finder(object):
         t = 0
         cycle = (robot.cycle/1000.0) #s
         #calc bias to make sure the last point is when V=0
-        bias = tpoints[-1].time-math.floor(tpoints[-1].time/cycle)*cycle 
+        bias = tpoints[-1].time - math.floor(tpoints[-1].time/cycle)*cycle 
         traj[0].time = time_offset
         
         for i in range(len(tpoints))[1:]:
@@ -476,7 +491,8 @@ def main(data_from_js):
         path_points = [utils.point(
             path_point["x"],
             path_point["y"],
-            path_point["heading"])
+            path_point["heading"],
+            path_point["mag"])
             for path_point in path_data["points"]]
         
         if (index > 0):
@@ -493,6 +509,7 @@ def main(data_from_js):
     
     time_offset = 0
     move_dir = 1
+
     for path in paths:
         #the reason we are all here:
         if (cmd == 0):
@@ -505,12 +522,15 @@ def main(data_from_js):
         out_data["traj"] = utils.merge_dicts(out_data["traj"], path.create_traj_data())
         
         time_offset = path.trajectory[-1].time
+        
+        # Switch direction for every new path, since a new path is
+        # a direction switch
         move_dir *= -1
 
     print(json.dumps(out_data))
 
     #set this to True to open matplotlib for graphing
-    if False:
+    if True:
         for path in paths:
             tpoints = path.trajectory
 
@@ -570,7 +590,7 @@ def main(data_from_js):
 
         #path_p.scatter(paths[0].draw_graph(0.001)[0], paths[0].draw_graph(0.001)[1], s=3)
         path_p.plot(paths[0].draw_graph(0.001)[0], paths[0].draw_graph(0.001)[1])
-        path_p.plot(sim_x, sim_y)
+        #path_p.plot(sim_x, sim_y)
         path_p.set(xlabel='X [m]', ylabel='Y [m]')
         path_p.axis('equal')
         path_p.grid()

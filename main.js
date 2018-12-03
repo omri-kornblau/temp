@@ -56,23 +56,24 @@ console.log(process.platform);
 
 const http = require('http');
 const server = http.createServer((req, res) => {
-    if (req.method === 'POST') {
-        // Handle post info...
-        let body = '';
-        req.on('data', chunk => {
-            body += chunk.toString(); // convert Buffer to string
-        });
-        req.on('end', () => {
-            var input = decodeURIComponent(body).split("=")[1];
-            var PythonShell = require('python-shell');
+  if (req.method === 'POST') {
+    // Handle post info...
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString(); // convert Buffer to string
+    });
+    req.on('end', () => {
+      var input = decodeURIComponent(body).split("=")[1];
+      console.log(input);
+      var PythonShell = require('python-shell');
 	    if (process.platform === "linux") {
-           	var options = {
-           	   mode: 'text',
-           	   pythonPath: '/usr/bin/python3',
-           	   pythonOptions: ['-u'], // get print results in real-time
-           	   scriptPath: './Python',
-           	   args: [input]
-           	};
+        var options = {
+          mode: 'text',
+          pythonPath: '/usr/bin/python3',
+          pythonOptions: ['-u'], // get print results in real-time
+          scriptPath: './Python',
+          args: [input]
+        };
 	    }
       else {
 		    var options = {
@@ -81,7 +82,7 @@ const server = http.createServer((req, res) => {
            	   pythonOptions: ['-u'], // get print results in real-time
            	   scriptPath: 'Python',
            	   args: [input]
-           	};
+              };
 	    }
         var pyshell = new PythonShell(python_script, options);
         pyshell.on('message', function (message) {

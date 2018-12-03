@@ -24,7 +24,7 @@ let robot_height = 0.8 //Meters
 const POINT_SIZE = 5;
 const PATH_SIZE  = 1;
 
-const real_field_width  = 8; //Meters
+const real_field_width  = 16; //Meters
 const real_field_height = 8; //Meters
 
 function toPrec (inp ,prec) {
@@ -82,6 +82,7 @@ class Point {
     this.data["y"] = Number(this.element.querySelectorAll('.y > input')[0].value);
     this.data["heading"] = Number(this.element.querySelectorAll('.heading > input')[0].value)*Math.PI/180;
     this.data["switch"] = String(this.element.querySelectorAll('.switch > label > input')[0].checked);
+    this.data["mag"] = Number(this.element.querySelectorAll('.mag > input')[0].value);
   }
 }
 
@@ -147,6 +148,7 @@ class Points {
       addPoint(this.solvePoints[i].data["x"],
                 this.solvePoints[i].data["y"],
                 this.solvePoints[i].data["heading"],
+                this.solvePoints[i].data["mag"],
                 this.solvePoints[i].data["switch"],
                 false);
     }
@@ -179,7 +181,7 @@ class Params {
         input_elements[i].value = this.params[input_elements[i].getAttribute('id')]; 
     }      
 
-    if (path_data[0]["costs"] != null) {
+    if (path_data[0]["costs"] != NaN) {
         document.getElementById("pos_cost_val").innerHTML = path_data[0]["costs"]["pos_cost"].toPrecision(3);
         document.getElementById("angle_cost_val").innerHTML = path_data[0]["costs"]["angle_cost"].toPrecision(3);
         document.getElementById("radius_cost_val").innerHTML = path_data[0]["costs"]["radius_cost"].toPrecision(3);
@@ -239,7 +241,6 @@ class AppData {
   }
 
   reset () {
-    this.version = 0;
     this.updateForms() ;
   }
 
@@ -278,8 +279,8 @@ class AppData {
       output += toPrec(this.getTraj()["time"][i], precision) + divider;
       output += toPrec(-1*this.getTraj()["y"][i], precision) + divider; //patch to handle inverted axis
       output += toPrec(this.getTraj()["x"][i], precision) + divider;
-      output += toPrec(this.getTraj()["right_vel"][i], precision) + divider;
       output += toPrec(this.getTraj()["left_vel"][i], precision) + divider;
+      output += toPrec(this.getTraj()["right_vel"][i], precision) + divider;
       output += toPrec(putAngleInRange(this.getTraj()["heading"][i]), precision) + divider;
       output += "\n";
     }
@@ -402,13 +403,13 @@ function initField() {
     appData.getPoints().draw();
   };
 
-  field_img.src = 'static/img/field_background_half.png';
+  field_img.src = 'static/img/field_background.png';
   pixel_meters = field_canvas.width/real_field_width;
 }
 
 function drawField(cleanPath=false) {
+  f_ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
   if (!newSolve) {
-    f_ctx.drawImage(field_img, 0, 0, field_img.width, field_img.height, 0, 0, field_canvas.width, field_canvas.height);
     //f_ctx.shadowBlur = 0; shadows will make render slower
       if(!cleanPath) {
         for (let i = 0; i < appData.getPath().length; i++) {
@@ -460,13 +461,14 @@ function change () {
   appData.getPoints().update();
   setDuration("Duration: ");
   clickedGraph = true;
+  newSolve = false;
   drawField(false);
   $("#download").show(100); 
 }
 
-function reset_data () {
+function resetData () {
   appData.reset();
-  reset();
+  change();
 }
 
 function redo_change () {
@@ -500,6 +502,8 @@ function addPoint (x=-1, y=-1, angle=0, reverse=false, draw=true) {
     "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
     angle*180/Math.PI + 
     "></td>"+
+    "<td class='mag'><input class='form-control form-control-small' type='number' placeholder='mag' oninput='reset()' value='1' step='5'></td>" + 
+
     "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset()' "+
     reverse +
     "><span class='handle'></span></label></td>"+

@@ -2785,7 +2785,7 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
 @media (min-width: 768px) {
   .canvas-wraper {
     position: relative;
-    width: 340px;
+    width: 680px;
     height: 340px; 
     margin: 0px auto; 
     border-radius: 10px;

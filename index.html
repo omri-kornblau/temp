@@ -38,8 +38,8 @@
         </div>
             <div class="jumbotron-contents" style="text-align: center">
                 <div class="canvas-wraper">
-                    <canvas id="field_canvas" width="340" height="340"> </canvas> 
-                    <canvas id="points_canvas" width="340" height="340"> </canvas> 
+                    <canvas id="field_canvas" width="680" height="340"> </canvas> 
+                    <canvas id="points_canvas" width="680" height="340"> </canvas> 
                 </div>
             </div>
             <div class="jumbotron-footer" style="text-align: center"> 
@@ -97,7 +97,7 @@
                                         </tr>
                                         <tr>
                                             <td>Radius Cont</td>
-                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="radius_cont" value=0.1 ></td>
+                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="radius_cont" value=0.001 ></td>
                                             <td><span class="badge badge-default" id="radius_cont_cost_val">cost</span></td>
                                         </tr>
                                         <tr>
@@ -137,11 +137,11 @@
                                     <tbody>
                                         <tr>
                                             <td>Max Velocity</td>
-                                            <td><input class="form-control form-control-param" type='number'  id="max_vel" value=3.5></td>
+                                            <td><input class="form-control form-control-param" type='number'  id="max_vel" value=3></td>
                                         </tr>
                                         <tr>
                                             <td>Max Acceleration</td>
-                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="max_acc" value=8 ></td>
+                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="max_acc" value=5 ></td>
                                         </tr>
                                         <tr>
                                         <td>Jerk</td>
@@ -172,7 +172,7 @@
             <div class="solve-group"">
                 <div class="btn-group">
                     <a class="btn btn-danger" onclick="solve()"><i class="glyphicon glyphicon-fire"></i> FIND</a>
-                    <a class="btn btn-danger" onclick="reset_data(); drawField(true);"><i class="glyphicon glyphicon-repeat"></i></a>
+                    <a class="btn btn-danger" onclick="resetData(); drawField(true);"><i class="glyphicon glyphicon-repeat"></i></a>
                 </div>
 
                 <div> 
@@ -207,6 +207,7 @@
                             <th>X</th>
                             <th>Y</th>
                             <th>Heading</th>
+                            <th>Mag</th>
                             <th>switch</th>
                         </thead>
                         <tbody  id="points">
@@ -215,6 +216,7 @@
                                 <td class='x'><input class="form-control form-control-small" type='number' step="0.1" placeholder="X" oninput="reset()" value=1 ></td>
                                 <td class='y'><input class="form-control form-control-small" type='number' step="0.1" placeholder="Y" oninput="reset()" value=1 ></td>
                                 <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=90 step="5"></td>
+                                <td class='mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset(this)"><span class="handle"></span></label></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"
                                     onclick='deletePoint(this)'>
@@ -226,6 +228,7 @@
                                 <td class='x'><input class="form-control form-control-small" type='number' step="0.1" placeholder="X" oninput="reset()" value=2 ></td>
                                 <td class='y'><input class="form-control form-control-small" type='number' step="0.1" placeholder="Y" oninput="reset()" value=2 ></td>
                                 <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=0 step="5"></td>
+                                <td class='mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset()"><span class="handle"></span></label></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"onclick='deletePoint(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
