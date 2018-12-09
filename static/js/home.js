@@ -1,18 +1,34 @@
-//let data = "";
+// Drawing canvases
 let f_ctx;
 let p_ctx;
-
 let field_img;
 let field_canvas;
-
 let points_canvas;
 let pixel_meters;
 
-const default_data = {path: [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}]}
+// Points drawing sizes
+const POINT_SIZE = 5;
+const PATH_SIZE  = 1;
 
-let parsed_data  = [default_data]; //stores all the data got from python 
+// Field size constants
+const real_field_width  = 16; //Meters
+const real_field_height = 8; //Meters
 
+// Zoom and pan
+let zoomAmount = 1;
+
+let panTrackX = 0;
+let panTrackY = 0;
+
+let panActive = false;
+let mousePressed = false;
+let prevMouseX = 0;
+let prevMouseY = 0;
+
+// Store all paths data and parameters
 let appData;
+
+const default_data = {path: [{"path_points":[],"scalars_x":[null], "scalars_y":[null]}]}
 
 let clickedGraph = true;
 
@@ -21,11 +37,6 @@ let newSolve    = true; //whether there is data or not
 
 let robot_height = 0.8 //Meters
 
-const POINT_SIZE = 5;
-const PATH_SIZE  = 1;
-
-const real_field_width  = 16; //Meters
-const real_field_height = 8; //Meters
 
 function toPrec (inp ,prec) {
   ans = inp*Math.pow(10, prec);
@@ -279,8 +290,8 @@ class AppData {
       output += toPrec(this.getTraj()["time"][i], precision) + divider;
       output += toPrec(-1*this.getTraj()["y"][i], precision) + divider; //patch to handle inverted axis
       output += toPrec(this.getTraj()["x"][i], precision) + divider;
-      output += toPrec(this.getTraj()["left_vel"][i], precision) + divider;
       output += toPrec(this.getTraj()["right_vel"][i], precision) + divider;
+      output += toPrec(this.getTraj()["left_vel"][i], precision) + divider;
       output += toPrec(putAngleInRange(this.getTraj()["heading"][i]), precision) + divider;
       output += "\n";
     }
@@ -393,7 +404,50 @@ function initField() {
 
   f_ctx = field_canvas.getContext('2d');
   p_ctx = points_canvas.getContext('2d');
+
+  f_ctx.transform(1, 0, 0, -1, 0, field_canvas.height)
+  p_ctx.transform(1, 0, 0, -1, 0, field_canvas.height)
+
+  points_canvas.addEventListener('mousedown', (event) => {
+    if (panActive) {
+      prevMouseX = event.x;
+      prevMouseY = event.y;
+      mousePressed = true;
+    }
+  }, false);
+
+  points_canvas.addEventListener('mouseup', (event) => {
+    if (panActive) {
+      mousePressed = false;
+    }
+  }, false);
+
+  points_canvas.addEventListener('mousemove', (event) => {
+    if (panActive && mousePressed) {
+      let diffX = -(prevMouseX - event.x);
+      let diffY = (prevMouseY - event.y);
+
+      let isInCanvas = 
+        (Math.abs(panTrackX-diffX) <= (real_field_width*zoomAmount - real_field_width)*pixel_meters)
+        && (Math.abs(panTrackY+diffY) <= (real_field_height*zoomAmount - real_field_height)*pixel_meters);
   
+      if ((zoomAmount > 1) && isInCanvas) {
+        
+        panTrackX += diffX;
+        panTrackY += diffY;
+  
+        p_ctx.transform(1, 0, 0, 1, diffX, diffY);
+        f_ctx.transform(1, 0, 0, 1, diffX, diffY);
+        
+        drawField();
+  
+      }
+
+      prevMouseX = event.x;
+      prevMouseY = event.y;
+    }
+  }, false);
+
   field_img = new Image;
 
   appData = new AppData();
@@ -552,9 +606,52 @@ function saveTraj () {
   }));
 }
 
+function zoom (amount) {
+  if (amount > 0) {
+    f_ctx.transform(1, 0, 0, 1, -panTrackX, -panTrackY);
+    p_ctx.transform(1, 0, 0, 1, -panTrackX, -panTrackY);
+  
+    panTrackX = 0;
+    panTrackY = 0;
+  
+    if (zoomAmount*amount >= 1) {
+      p_ctx.transform(amount, 0, 0, amount, 0, 0);
+      f_ctx.transform(amount, 0, 0, amount, 0, 0);
+      zoomAmount *= amount;
+    }
+  }
+  else {
+    amount = 0.8;
+    
+    f_ctx.transform(1, 0, 0, 1, -panTrackX, -panTrackY);
+    p_ctx.transform(1, 0, 0, 1, -panTrackX, -panTrackY);
+
+    panTrackX = 0;
+    panTrackY = 0;
+    
+    while (zoomAmount > 1) {
+      p_ctx.transform(amount, 0, 0, amount, 0, 0);
+      f_ctx.transform(amount, 0, 0, amount, 0, 0);
+
+      zoomAmount *= amount;
+    }
+  }
+  drawField();
+}
+
+function pan () {
+  panActive = !panActive;
+  if (panActive) {
+    points_canvas.style.cursor = "move";
+  }
+  else {
+    points_canvas.style.cursor = "initial";
+  }
+}
+
 //The function is called to solve things with python
 //Command can be 0, 1 or 2 --> path+traj, path, traj
-function solve(command=0) {
+function solve (command=0) {
   appData.getPoints().update();
   appData.getParams().update();
   

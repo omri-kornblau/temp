@@ -46,10 +46,10 @@
                 <div class="btn-group">
                     <button type="button" class="btn btn-primary" onclick="undo_change()"><i class="glyphicon glyphicon-chevron-left"></i></button>
                     <button type="button" class="btn btn-primary" onclick="redo_change()"><i class="glyphicon glyphicon-chevron-right"></i></button>
-                    <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-home"></i></button>
-                    <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-zoom-in"></i></button>
-                    <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-zoom-out"></i></button>
-                    <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-move"></i></button>
+                    <button type="button" class="btn btn-primary" onclick="zoom(-1);"><i class="glyphicon glyphicon-home"></i></button>
+                    <button type="button" class="btn btn-primary" onclick="zoom(1.25);"><i class="glyphicon glyphicon-zoom-in"></i></button>
+                    <button type="button" class="btn btn-primary" onclick="zoom(0.8);"><i class="glyphicon glyphicon-zoom-out"></i></button>
+                    <button type="button" class="btn btn-primary" onclick="pan();"><i class="glyphicon glyphicon-move"></i></button>
                     <button type="button" class="btn btn-primary" onclick="addPoint()"><i class="glyphicon glyphicon-plus-sign"></i></button>
                     <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-floppy-disk"></i></button>
                     <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-paperclip"></i></button>
@@ -149,7 +149,7 @@
                                         </tr>
                                         <tr>
                                             <td>Robot Wheels Width</td>
-                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="width" value=0.65 ></td>
+                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="width" value=0.75 ></td>
                                         </tr>
                                         <tr>
                                             <td>Robot Height</td>

@@ -217,10 +217,6 @@ class path_finder(object):
     def get_radius_cost(self):
         cost = 0
         counter = 0
-        # if not self.temp_rad_bool:
-        #     regulator = random.random()*self.RES/2-self.RES
-
-        # self.temp_rad_bool = not self.temp_rad_bool
 
         for index in range(self.path_amount):
             # for s in ( np.cbrt(((np.arange(self.MIN, self.MAX + self.RES,  self.RES))-0.5)*2)*0.5 + 0.5):
@@ -250,8 +246,8 @@ class path_finder(object):
             counter = 0
 
         for index in range(self.path_amount - 1):
-            curv = self.radius(index, self.MAX + 1e-6)
-            last_curv = self.radius(index+1, self.MIN - 1e-6)
+            curv = self.radius(index, self.MAX - 1e-8)
+            last_curv = self.radius(index+1, self.MIN + 1e-8)
             #curv = math.sqrt(self.d2xds2(index, self.MAX)**2+self.d2yds2(index, self.MAX)**2)
             #last_curv = math.sqrt(self.d2xds2(index+1, self.MIN)**2+self.d2yds2(index+1, self.MIN)**2)
             
@@ -530,7 +526,7 @@ def main(data_from_js):
     print(json.dumps(out_data))
 
     #set this to True to open matplotlib for graphing
-    if True:
+    if False:
         for path in paths:
             tpoints = path.trajectory
 
