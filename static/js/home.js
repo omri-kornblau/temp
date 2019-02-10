@@ -658,39 +658,46 @@ function solve (command=0) {
   let points_data = appData.getPoints().getData();
   let params = appData.getParams().getData();
   
-  let data=[];
+  let data = [];
   let start = 0;
   let path_num = 0;
-  
+  let move_dir = 1
+
   for(let i = 0; i < points_data.length; i++)  {
     if (i == points_data.length - 1) {
       data.push({
         "params": params, 
         "points":points_data.slice(start),
         "scalars_x":appData.getPath()[path_num]["scalars_x"], 
-        "scalars_y":appData.getPath()[path_num]["scalars_y"]});
-      }
+        "scalars_y":appData.getPath()[path_num]["scalars_y"],
+        "move_dir":move_dir});
+    }
       
-      if (points_data[i]["switch"]  == "true") {   
+    if (points_data[i]["switch"]  == "true") {
+      if (i !== 0) {
         data.push({
           "params": params, 
           "points":points_data.slice(start, i + 1),
           "scalars_x":appData.getPath()[path_num]["scalars_x"], 
-          "scalars_y":appData.getPath()[path_num]["scalars_y"]});
+          "scalars_y":appData.getPath()[path_num]["scalars_y"],
+          "move_dir":move_dir});
           start = i;
           
           if (!newSolve) {
             path_num++;
           }  
-        }
       }
-      appData.newVersion();
-      
-      //$("#params_cont").blur();
-      $("#download").hide(300);
-      $("#loader").show(300);
-      
-      let sentData = JSON.stringify({'data': data, 'cmd': command});
+      move_dir *= -1;   
+    }
+  }
+
+  appData.newVersion();
+  
+  //$("#params_cont").blur();
+  $("#download").hide(300);
+  $("#loader").show(300);
+  
+  let sentData = JSON.stringify({'data': data, 'cmd': command});
   
   $.post("http://127.0.0.1:3000/", {'data': sentData}, function(data, status) {
     $("#loader").hide(300);

@@ -40,7 +40,7 @@ class path_finder(object):
     DEFAULT_DS = 0.000001
     END_S_THRES = 0.97    
 
-    def __init__(self, params, scalars_x, scalars_y, *points):
+    def __init__(self, params, scalars_x, scalars_y, move_direction, *points):
         """
         each parameter should be a tuple of (x, y, angle)
         """
@@ -49,6 +49,8 @@ class path_finder(object):
         self.path_amount = len(self.points)-1
         self.quintic = params.get("method")
         
+        self.move_dir = move_direction
+
         self.update_scalars(scalars_x, scalars_y, len(points), params.get("poly", 3))
         self.update_poly(params.get("poly", 3))
         self.update_costs_weights(params)
@@ -331,10 +333,10 @@ class path_finder(object):
         else:
             opt.minimize(self.cost_function, np.ravel([self.scalars_x, self.scalars_y]), method = self.OPTIMIZE_FUNCTION)
 
-    def find_trajectory(self, robot, move_dir, time_offset):
+    def find_trajectory(self, robot, time_offset):
         first_point_angle = math.atan2(self.dyds(0, self.MIN), self.dxds(0, self.MIN))
         
-        if move_dir < 0:
+        if self.move_dir < 0:
             first_point_angle = utils.delta_angle(first_point_angle, math.pi)
 
         tpoints = [trajectory_point(self.x(0, self.MIN), self.y(0, self.MIN), first_point_angle)]
@@ -402,7 +404,7 @@ class path_finder(object):
         #re calc time by velocities
         tpoints[0].time = time_offset
         for i in range(len(tpoints))[1:]:
-            tpoints[i].update_point(tpoints[i-1], move_dir)
+            tpoints[i].update_point(tpoints[i-1], self.move_dir)
 
         #interpolate to cycle time 
         traj = [trajectory_point(tpoints[0].x, tpoints[0].y, tpoints[0].angle)]
@@ -498,30 +500,26 @@ def main(data_from_js):
             path_data["params"], 
             path_data["scalars_x"],
             path_data["scalars_y"],
+            path_data["move_dir"],
             *path_points))
     
     #setup robot object
     robot = utils.Robot(path_data["params"])
     
     time_offset = 0
-    move_dir = 1
 
     for path in paths:
         #the reason we are all here:
         if (cmd == 0):
             path.find_scalars()
 
-        path.find_trajectory(robot, move_dir, time_offset)
+        path.find_trajectory(robot, time_offset)
 
         #set data to be sent to GUI
         out_data["path"].append(path.create_path_data())
         out_data["traj"] = utils.merge_dicts(out_data["traj"], path.create_traj_data())
         
         time_offset = path.trajectory[-1].time
-        
-        # Switch direction for every new path, since a new path is
-        # a direction switch
-        move_dir *= -1
 
     print(json.dumps(out_data))
 
