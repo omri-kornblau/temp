@@ -1,3 +1,7 @@
+const fs = require('fs');
+const {dialog} = require('electron').remote;
+const path = require('path');
+
 // Drawing canvases
 let f_ctx;
 let p_ctx;
@@ -92,8 +96,9 @@ class Point {
     this.data["x"] = Number(this.element.querySelectorAll('.x > input')[0].value);
     this.data["y"] = Number(this.element.querySelectorAll('.y > input')[0].value);
     this.data["heading"] = Number(this.element.querySelectorAll('.heading > input')[0].value)*Math.PI/180;
-    this.data["switch"] = String(this.element.querySelectorAll('.switch > label > input')[0].checked);
     this.data["mag"] = Number(this.element.querySelectorAll('.mag > input')[0].value);
+    this.data["slow_dist"] = Number(this.element.querySelectorAll('.slow_dist > input')[0].value);
+    this.data["switch"] = String(this.element.querySelectorAll('.switch > label > input')[0].checked);
   }
 }
 
@@ -160,6 +165,7 @@ class Points {
                 this.solvePoints[i].data["y"],
                 this.solvePoints[i].data["heading"],
                 this.solvePoints[i].data["mag"],
+                this.solvePoints[i].data["slow_dist"],
                 this.solvePoints[i].data["switch"],
                 false);
     }
@@ -223,8 +229,10 @@ class AppData {
 
   updateForms () {
     this.solverData[this.version]["params"].load(this.solverData[this.version]["path"]);
-    this.solverData[this.version]["points"].load(this.solverData[this.version]["points"]);    
+    this.solverData[this.version]["points"].load();
     document.getElementById("auto_name").value = this.name;
+
+    drawField(false);
   }
 
   newVersion () {
@@ -283,30 +291,68 @@ class AppData {
   }
 
   createTrajFile (precision=3) {
-    const divider = "\t"
-    let output = ""
-    
-    for (let i = 0; i < this.getTraj()  ["time"].length; i++) {
-      output += toPrec(this.getTraj()["time"][i], precision) + divider;
-      output += toPrec(-1*this.getTraj()["y"][i], precision) + divider; //patch to handle inverted axis
-      output += toPrec(this.getTraj()["x"][i], precision) + divider;
-      output += toPrec(this.getTraj()["right_vel"][i], precision) + divider;
-      output += toPrec(this.getTraj()["left_vel"][i], precision) + divider;
-      output += toPrec(putAngleInRange(this.getTraj()["heading"][i]), precision) + divider;
-      output += "\n";
+    const seperator = "\t";
+    let output = "";
+
+    for (let path of this.getPath()) {
+      const traj = path.traj;
+      const maxTime = traj["time"][traj["time"].length-1];
+
+      for (let i = 0; i < traj["time"].length; i++) {
+        output += toPrec((maxTime - traj["time"][i]), precision) + seperator;
+        output += toPrec(-1*traj["y"][i], precision) + seperator; //patch to handle inverted axis
+        output += toPrec(traj["x"][i], precision) + seperator;
+        output += toPrec(traj["right_vel"][i], precision) + seperator;
+        output += toPrec(traj["left_vel"][i], precision) + seperator;
+        output += toPrec(putAngleInRange(traj["heading"][i]), precision) + seperator;
+        output += (traj["slow"][i] ? "1" : "0") + seperator;
+        output += "\n";
+      }
     }
 
     return output;
   }
 
-  createDataFile () {
-    return JSON.stringify(this.solverData, null, 2);
+  createAppDataFile () {
+    let pointsData = [];
+    this.getPoints().points.forEach(point => {
+      pointsData.push(point.data);
+    });
+    
+    let dataObject = {
+      name: this.name,
+      params: this.getParams(),
+      points: pointsData,
+      path: this.getPath(),
+      traj: this.getTraj()
+    }
+
+    return JSON.stringify(dataObject);
   }
 
-  loadData (prevData) {
-    //this = prevData;
+  loadData (data) {
+    this.name = data.name;
+    this.solverData[this.version].params.params = data.params.params;
+    this.solverData[this.version].path = data.path;
+    this.solverData[this.version].traj = data.traj;
     
+    $('#points').html("");
+    
+    data.points.forEach(point => {
+      addPoint(
+        point["x"],
+        point["y"],
+        point["heading"],
+        point["mag"],
+        point["slow_dist"],
+        point["switch"],
+        false);
+    });
+    
+    this.getPoints().update();
+    this.solverData[this.version].points.solvePoints = this.solverData[this.version].points.points;
     this.updateForms();
+    this.getPoints().update();
   }
 }
 
@@ -329,7 +375,9 @@ function get_mouse_pos (canvas, evt) {
   return {x: evt.clientX - rect.left, y: evt.clientY - rect.top};
 }
 
-function drawPath (path_points){
+function drawPath (path){
+  path_points = path.path_points;
+
   let robotWidth = appData.getParams().params["width"];
   f_ctx.beginPath();
   
@@ -383,8 +431,8 @@ function drawPath (path_points){
 
   for (let i = 0; i < path_points.length; i+=inc){
 
-    let traj_i = parseInt(i*appData.getTraj()["left_vel"].length/path_points.length);
-    let vel_hue = Math.abs((appData.getTraj()["left_vel"][traj_i]+appData.getTraj()["right_vel"][traj_i])/2);
+    let traj_i = parseInt(i*path.traj.left_vel.length/path_points.length);
+    let vel_hue = Math.abs((path.traj.left_vel[traj_i] + path.traj.right_vel[traj_i])/2);
     vel_hue = 100-parseInt(vel_hue*100/appData.getParams().getData()["max_vel"]);
     color = "hsl("+vel_hue+",100%,60%)";
     f_ctx.fillStyle = color;
@@ -467,7 +515,7 @@ function drawField(cleanPath=false) {
     //f_ctx.shadowBlur = 0; shadows will make render slower
       if(!cleanPath) {
         for (let i = 0; i < appData.getPath().length; i++) {
-          drawPath(appData.getPath()[i]["path_points"]);
+          drawPath(appData.getPath()[i]);
         }
       }
     }
@@ -535,38 +583,39 @@ function undo_change () {
   change();
 }
 
-function addPoint (x=-1, y=-1, angle=0, reverse=false, draw=true) {
-  reverse = (reverse === true) ? "checked":"";
-
+function addPoint (x=-1, y=-1, angle=0, mag=1, slow=0, reverse=false, draw=true) {
   if (x < 0) {
     x = Math.min(real_field_width,(appData.getPoints().getData()[appData.getPoints().amount-1]["x"]+1));
     y = Math.min(real_field_width,(appData.getPoints().getData()[appData.getPoints().amount-1]["y"]+1));
   }
-
-  $('#points').append("<tr class='point move-cursor'>"+
-    "<td class='delete'><a class='btn btn-link btn-small' onclick='alignRobot(this)'>" + 
-    "<i class='glyphicon glyphicon-object-align-left glyphicon-small'></i>" +
-    "</a></td>" +
-    "<td class='x'><input class='form-control form-control-small' type='number' step='0.1' placeholder='X' oninput='reset()' value=" +
+  
+  $('#points').append(`<tr class="point move-cursor">`+
+    `<td class="delete"><a class="btn btn-link btn-small" onclick="alignRobot(this)">` + 
+    `<i class="glyphicon glyphicon-object-align-left glyphicon-small"></i>` +
+    `</a></td>` +
+    `<td class="x"><input class="form-control form-control-small" type="number" step="0.1" placeholder="X" oninput="reset()" value=` +
     x + 
-    "></td>" +
-    "<td class='y'><input class='form-control form-control-small' type='number' step='0.1' placeholder='Y' oninput='reset()' value=" +
+    `></td>` +
+    `<td class="y"><input class="form-control form-control-small" type="number" step="0.1" placeholder="Y" oninput="reset()" value=` +
     y + 
-    "></td>"+
-    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
+    `></td>`+
+    `<td class="heading"><input class="form-control form-control-small" type="number" placeholder="α" oninput="reset()" step="5" value=`+
     angle*180/Math.PI + 
-    "></td>"+
-    "<td class='mag'><input class='form-control form-control-small' type='number' placeholder='mag' oninput='reset()' value='1' step='5'></td>" + 
+    `></td>`+
+    `<td class="mag"><input class="form-control form-control-small" type="number" placeholder="mag" oninput="reset()" step="5" value=` + 
+    mag +
+    `></td>` +
+    `<td class="slow_dist"><input class="form-control form-control-small" type="number" placeholder="slow" oninput="reset()" step=0.1 value=` +
+    slow +
+    `></td>` +
+    `<td class="switch"><label class="toggle" onclick="reset()"><input type="checkbox" ${(reverse ? "checked" : "")}>`+
+    `<span class="handle"></span></label></td>` +
+    `<td class="delete"><a class="btn btn-danger btn-small" onclick="deletePoint(this)">`+
+    `<i class="glyphicon glyphicon-trash glyphicon-small"></i>`+
+    `</a></td>`+
+    `</tr>`);
 
-    "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset()' "+
-    reverse +
-    "><span class='handle'></span></label></td>"+
-    "<td class='delete'><a class='btn btn-danger btn-small' onclick='deletePoint(this)'>"+
-    "<i class='glyphicon glyphicon-trash glyphicon-small'></i>"+
-    "</a></td>"+
-    "</tr>");
-
-  if (draw) {
+    if (draw) {
     reset();
   }
 }
@@ -587,23 +636,55 @@ function alignRobot (elem) {
 }
 
 function saveTraj () {
-  const {dialog} = require('electron').remote;
-  const fs = require('fs');
-  const path = require('path');
-
-  options = {title: "Save Trajectory File", defaultPath: (appData.name + ".txt")}
+  let options = {title: "Save Trajectory File", defaultPath: (appData.name)}
   console.log(dialog.showSaveDialog(options,(fileName) => {
     if (fileName === undefined) {
         return;
     }
 
-    fs.writeFile(fileName, appData.createTrajFile(), (err) => {
+    fs.writeFile(`${fileName}.txt`, appData.createTrajFile(), (err) => {
+      if (err) console.log(err);
+    });
+  }));
+}
+
+function saveAppData () {
+  const options = {title: "Save Auto File", defaultPath: (appData.name + ".auto")}
+  console.log(dialog.showSaveDialog(options,(fileName) => {
+    if (fileName === undefined) {
+      return;
+    }
+
+    if (!fileName.includes('.auto')) {
+      fileName += '.auto';
+    }
+
+    fs.writeFile(fileName, appData.createAppDataFile(), (err) => {
       if (err) console.log(err);
     })
 
-    appData.name = path.basename(fileName).split('.txt')[0];
-    appData.updateForms();
+    appData.name = path.basename(fileName).split('.auto')[0];
+    document.getElementById("auto_name").value = appData.name;
   }));
+}
+
+function loadAppData () {
+  const options = {properties: ['openFile', 'multiSelections'], defaultPath: (appData.name + ".auto")}
+  dialog.showOpenDialog(options, (files) => {
+    if (files !== undefined) {
+      fs.readFile(files[0], (err, jsonData) => {
+        appData = new AppData();
+        
+        appData.loadData(JSON.parse(jsonData));
+        
+        setDuration("Duration: ");
+        clickedGraph = true;
+        newSolve = false;
+        drawField(false);
+        $("#download").show(100); 
+      });
+    }
+  });
 }
 
 function zoom (amount) {
@@ -670,7 +751,10 @@ function solve (command=0) {
         "points":points_data.slice(start),
         "scalars_x":appData.getPath()[path_num]["scalars_x"], 
         "scalars_y":appData.getPath()[path_num]["scalars_y"],
-        "move_dir":move_dir});
+        "move_dir":move_dir,
+        "slow_end":points_data[i]["slow_dist"],
+        "slow_start":(start === 0) ? points_data[start]["slow_dist"] : 0
+      });
     }
       
     if (points_data[i]["switch"]  == "true") {
@@ -680,12 +764,16 @@ function solve (command=0) {
           "points":points_data.slice(start, i + 1),
           "scalars_x":appData.getPath()[path_num]["scalars_x"], 
           "scalars_y":appData.getPath()[path_num]["scalars_y"],
-          "move_dir":move_dir});
-          start = i;
-          
-          if (!newSolve) {
-            path_num++;
-          }  
+          "move_dir":move_dir,
+          "slow_end":points_data[i]["slow_dist"],
+          "slow_start":(start === 0) ? points_data[start]["slow_dist"] : 0
+        });
+        
+        start = i;
+        
+        if (!newSolve) {
+          path_num++;
+        }  
       }
       move_dir *= -1;   
     }

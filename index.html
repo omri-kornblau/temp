@@ -51,15 +51,15 @@
                     <button type="button" class="btn btn-primary" onclick="zoom(0.8);"><i class="glyphicon glyphicon-zoom-out"></i></button>
                     <button type="button" class="btn btn-primary" onclick="pan();"><i class="glyphicon glyphicon-move"></i></button>
                     <button type="button" class="btn btn-primary" onclick="addPoint()"><i class="glyphicon glyphicon-plus-sign"></i></button>
-                    <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-floppy-disk"></i></button>
-                    <button type="button" class="btn btn-primary"><i class="glyphicon glyphicon-paperclip"></i></button>
+                    <button type="button" class="btn btn-primary" onclick="saveAppData()"><i class="glyphicon glyphicon-floppy-disk"></i></button>
+                    <button type="button" class="btn btn-primary" onclick="loadAppData()"><i class="glyphicon glyphicon-paperclip"></i></button>
                 </div>
             </div>
         </div>
         </div>
     </div>
 
-    <div class="container">
+    <!-- <div class="container"> -->
         <div class="col-md-5">
             <div class="panel panel-primary">
             <ul class="nav nav-tabs nav-justified">
@@ -144,6 +144,10 @@
                                             <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="max_acc" value=5 ></td>
                                         </tr>
                                         <tr>
+                                        <tr>
+                                            <td>Slow Max Velocity</td>
+                                            <td><input class="form-control form-control-param" type='number'  id="slow_max_vel" value=1.5></td>
+                                        </tr>
                                         <td>Jerk</td>
                                             <td><input class="param form-control form-control-param" type='number' placeholder="enter val.." id="jerk" value=100 ></td>
                                         </tr>
@@ -208,6 +212,7 @@
                             <th>Y</th>
                             <th>Heading</th>
                             <th>Mag</th>
+                            <th>Slow</th>
                             <th>switch</th>
                         </thead>
                         <tbody  id="points">
@@ -217,6 +222,7 @@
                                 <td class='y'><input class="form-control form-control-small" type='number' step="0.1" placeholder="Y" oninput="reset()" value=1 ></td>
                                 <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=90 step="5"></td>
                                 <td class='mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
+                                <td class='slow_dist'><input class="form-control form-control-small" type='number' placeholder="slow" oninput="reset()" value=0 step="0.1"></td>
                                 <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset(this)"><span class="handle"></span></label></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"
                                     onclick='deletePoint(this)'>
@@ -229,6 +235,7 @@
                                 <td class='y'><input class="form-control form-control-small" type='number' step="0.1" placeholder="Y" oninput="reset()" value=2 ></td>
                                 <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=0 step="5"></td>
                                 <td class='mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
+                                <td class='slow_dist'><input class="form-control form-control-small" type='number' placeholder="slow" oninput="reset()" value=0 step="0.1"></td>
                                 <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset()"><span class="handle"></span></label></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"onclick='deletePoint(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
@@ -241,7 +248,7 @@
               </div>
             </div>
         </div>
-    </div>
+    <!-- </div> -->
 
         <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
         <!-- JQuery -->

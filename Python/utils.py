@@ -22,6 +22,7 @@ class Robot (object):
     """defines robot's specs"""
     def __init__(self, params):
         self.max_vel = params.get("max_vel")
+        self.slow_max_vel = params.get("slow_max_vel")
         self.max_acc = params.get("max_acc")
         self.jerk = params.get("jerk")
         self.width_factor = 1.3
@@ -65,6 +66,8 @@ class trajectory_point(object):
         
         self.right_acc = 0
         self.left_acc  = 0
+        
+        self.slow = False
 
         self.dist = 0
         self.left_dist  = 0
