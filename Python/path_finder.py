@@ -193,8 +193,8 @@ class path_finder(object):
         dy = self.dyds(index, s)
         d2y = self.d2yds2(index, s)
 
-        if (((d2x * dy) - (d2y * dx)) == 0):
-            return (float(10**5))
+        # if (((d2x * dy) - (d2y * dx)) == 0):
+        #     return (float(10**5))
         
         return  ((d2x*dy) - (d2y*dx)) / ((dx**2) + (dy**2))**1.5
     
@@ -226,12 +226,12 @@ class path_finder(object):
         for index in range(self.path_amount):
             # for s in ( np.cbrt(((np.arange(self.MIN, self.MAX + self.RES,  self.RES))-0.5)*2)*0.5 + 0.5):
             for s in np.arange(self.MIN, self.MAX + self.RES,  self.RES):
-                regulator = self.regulator[counter]
+                # regulator = self.regulator[counter]
                 
-                dx = self.dxds(index, s+regulator)
-                d2x = self.d2xds2(index, s+regulator)
-                dy = self.dyds(index, s+regulator)
-                d2y = self.d2yds2(index, s+regulator)
+                dx = self.dxds(index, s)
+                d2x = self.d2xds2(index, s)
+                dy = self.dyds(index, s)
+                d2y = self.d2yds2(index, s)
 
                 cost +=  (((d2x*dy) - (d2y*dx))/((dx**2) + (dy**2))**1.5)**4
 
@@ -254,8 +254,8 @@ class path_finder(object):
             for index in range(self.path_amount - 1):
                 curv = self.radius(index, self.MAX)
                 last_curv = self.radius(index+1, self.MIN)
-                #curv = math.sqrt(self.d2xds2(index, self.MAX)**2+self.d2yds2(index, self.MAX)**2)
-                #last_curv = math.sqrt(self.d2xds2(index+1, self.MIN)**2+self.d2yds2(index+1, self.MIN)**2)
+                # curv = math.sqrt(self.d2xds2(index, self.MAX)**2+self.d2yds2(index, self.MAX)**2)
+                # last_curv = math.sqrt(self.d2xds2(index+1, self.MIN)**2+self.d2yds2(index+1, self.MIN)**2)
                 
                 cost += (last_curv-curv) ** 2
                 counter += 1
@@ -301,9 +301,9 @@ class path_finder(object):
 
     def quintic_cost_function(self, args):
         for index, point in enumerate(self.points):
-            point.ddx = args[index*2]
-            point.ddy = args[index*2+1]
-            # point.magnitude = args[index*3+2]
+            point.ddx = args[index*3]
+            point.ddy = args[index*3+1]
+            point.magnitude = args[index*3+2]
         
         self.scalars_x = self.create_quintic_scalar_x()
         self.scalars_y = self.create_quintic_scalar_y()
@@ -313,7 +313,7 @@ class path_finder(object):
         self.costs["radius_cost"]      = self.get_radius_cost()
         self.costs["radius_cont_cost"] = self.get_radius_cont_cost()
         self.costs["length_cost"]      = self.get_length_cost()
-        self.costs["mag_size_cost"]    = self.get_mag_size_cost()
+        # self.costs["mag_size_cost"]    = self.get_mag_size_cost()
         
         costs_weighted = {}
 #        costs_weighted["pos_cost"]         = self.POS_COST * self.costs["pos_cost"]
@@ -321,7 +321,7 @@ class path_finder(object):
         costs_weighted["radius_cost"]      = self.RADIUS_COST * self.costs["radius_cost"]
         costs_weighted["radius_cont_cost"] = self.RADIUS_CONT_COST * self.costs["radius_cont_cost"]
         costs_weighted["length_cost"]      = self.LENGTH_COST * self.costs["length_cost"]
-        costs_weighted["mag_size_cost"]    = 0*self.costs["mag_size_cost"]
+        # costs_weighted["mag_size_cost"]    = 0*self.costs["mag_size_cost"]
         
         return sum(costs_weighted.values())
 
@@ -334,7 +334,7 @@ class path_finder(object):
             for point in self.points:
                 args.append(point.ddx)
                 args.append(point.ddy)
-                # args.append(point.magnitude)
+                args.append(point.magnitude)
 
             opt.minimize(self.quintic_cost_function, args, method = self.QUINTIC_OPTIMIZE_FUNCTION)
         else:

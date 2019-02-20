@@ -260,6 +260,8 @@ class AppData {
   }
 
   reset () {
+    this.solverData[this.version].path.scalars_x = null;
+    this.solverData[this.version].path.scalars_y = null;
     this.updateForms() ;
   }
 
@@ -429,7 +431,7 @@ function drawPath (path){
     f_ctx.fill();
   }
 
-  for (let i = 0; i < path_points.length; i+=inc){
+  for (let i = 0; i < path.traj.length; i+=inc){
 
     let traj_i = parseInt(i*path.traj.left_vel.length/path_points.length);
     let vel_hue = Math.abs((path.traj.left_vel[traj_i] + path.traj.right_vel[traj_i])/2);
@@ -437,7 +439,7 @@ function drawPath (path){
     color = "hsl("+vel_hue+",100%,60%)";
     f_ctx.fillStyle = color;
     f_ctx.beginPath();
-    f_ctx.arc (path_points[i]["x"]*pixel_meters, path_points[i]["y"]*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
+    f_ctx.arc (path.traj.x*pixel_meters, path.traj.y*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
     f_ctx.fill();
   }
 
