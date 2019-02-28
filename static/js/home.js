@@ -604,8 +604,11 @@ function addPoint (x=-1, y=-1, angle=0, mag=1, slow=0, reverse=false, draw=true)
     `<td class="heading"><input class="form-control form-control-small" type="number" placeholder="α" oninput="reset()" step="5" value=`+
     angle*180/Math.PI + 
     `></td>`+
-    `<td class="mag"><input class="form-control form-control-small" type="number" placeholder="mag" oninput="reset()" step="5" value=` + 
-    mag +
+    `<td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" step="0.1" value=` + 
+    String(start_mag) + 
+    `></td>` +
+    `<td class='end_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" step="0.1" value=` +
+    String(end_mag) +
     `></td>` +
     `<td class="slow_dist"><input class="form-control form-control-small" type="number" placeholder="slow" oninput="reset()" step=0.1 value=` +
     slow +
