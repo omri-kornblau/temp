@@ -15,8 +15,8 @@ const POINT_SIZE = 5;
 const PATH_SIZE  = 1;
 
 // Field size constants
-const real_field_width  = 16; //Meters
-const real_field_height = 8; //Meters
+const realFieldWidth  = 16.46; // meters
+const realFieldHeight = 8.23; // meters
 
 // Zoom and pan
 let zoomAmount = 1;
@@ -305,7 +305,7 @@ class AppData {
       for (let i = 0; i < traj["time"].length; i++) {
         output += toPrec((maxTime - traj["time"][i]), precision) + seperator;
         // Inevrted x and y for 1690s robot
-        output += toPrec(-1*traj["y"][i] + real_field_height/2, precision) + seperator; 
+        output += toPrec(-1*traj["y"][i] + realFieldHeight/2, precision) + seperator; 
         output += toPrec(traj["x"][i], precision) + seperator;
         output += toPrec(traj["right_vel"][i], precision) + seperator;
         output += toPrec(traj["left_vel"][i], precision) + seperator;
@@ -481,8 +481,8 @@ function initField() {
       let diffY = (prevMouseY - event.y);
 
       let isInCanvas = 
-        (Math.abs(panTrackX-diffX) <= (real_field_width*zoomAmount - real_field_width)*pixel_meters)
-        && (Math.abs(panTrackY+diffY) <= (real_field_height*zoomAmount - real_field_height)*pixel_meters);
+        (Math.abs(panTrackX-diffX) <= (realFieldWidth*zoomAmount - realFieldWidth)*pixel_meters)
+        && (Math.abs(panTrackY+diffY) <= (realFieldHeight*zoomAmount - realFieldHeight)*pixel_meters);
   
       if ((zoomAmount > 1) && isInCanvas) {
         
@@ -511,7 +511,7 @@ function initField() {
   };
 
   field_img.src = 'static/img/field_background.png';
-  pixel_meters = field_canvas.width/real_field_width;
+  pixel_meters = field_canvas.width/realFieldWidth;
 }
 
 function drawField(cleanPath=false) {
@@ -590,8 +590,8 @@ function undo_change () {
 
 function addPoint (x=-1, y=-1, angle=0, start_mag=1, end_mag=1, slow=0, reverse=false, draw=true) {
   if (x < 0) {
-    x = Math.min(real_field_width,(appData.getPoints().getData()[appData.getPoints().amount-1]["x"]+1));
-    y = Math.min(real_field_width,(appData.getPoints().getData()[appData.getPoints().amount-1]["y"]+1));
+    x = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["x"]+1));
+    y = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["y"]+1));
   }
   console.log(start_mag, end_mag);
   $('#points').append(`<tr class="point move-cursor">`+
