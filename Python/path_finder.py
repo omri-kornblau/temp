@@ -36,7 +36,7 @@ class path_finder(object):
     COST_TOLS = {"pos_cost": (10**(-2)) **2 , "angle_cost": (1*math.pi/180) **2, "radius_cost": 1, "radius_cont_cost": 100} 
 
     #trajectory
-    TIME_QUANT  = 1.0 #ms
+    TIME_QUANT  = 1 #ms
     DEFAULT_DS = 1e-5
     END_S_THRES = 0.97    
 
@@ -77,8 +77,8 @@ class path_finder(object):
                      reshape(len(self.points[:-1]), (self.HIGHEST_POLYNOM + 1))
 
         for index in range(len(self.points[:-1])):
-            self.points[index].update_v(self.points[index+1])
-            self.points[index+1].update_v(self.points[index])
+            self.points[index].update_v(self.points[index+1], False)
+            self.points[index+1].update_v(self.points[index], True)
             p0 = self.points[index] 
             p1 = self.points[index+1]
 
@@ -96,8 +96,8 @@ class path_finder(object):
                      reshape(len(self.points[:-1]), (self.HIGHEST_POLYNOM + 1))
 
         for index in range(len(self.points[:-1])):
-            self.points[index].update_v(self.points[index+1])
-            self.points[index+1].update_v(self.points[index])
+            self.points[index].update_v(self.points[index+1], False)
+            self.points[index+1].update_v(self.points[index], True)
             p0 = self.points[index] 
             p1 = self.points[index+1]
 
@@ -271,7 +271,7 @@ class path_finder(object):
     def get_mag_size_cost (self):
         cost = 0
         for point in self.points:
-            mag = point.magnitude
+            mag = point.start_mag
             #cost += ((point.magnitude_factor-1.2))**6 #(0.1**2)*((point.magnitude_factor-1.2))**2
             cost += 415+(-843)*mag+602*(mag**2)+(-177)*(mag**3)+18.5*(mag**4)
         return cost
@@ -301,9 +301,9 @@ class path_finder(object):
 
     def quintic_cost_function(self, args):
         for index, point in enumerate(self.points):
-            point.ddx = args[index*3]
-            point.ddy = args[index*3+1]
-            point.magnitude = args[index*3+2]
+            point.ddx = args[index*2]
+            point.ddy = args[index*2+1]
+            # point.magnitude = args[index*3+2]
         
         self.scalars_x = self.create_quintic_scalar_x()
         self.scalars_y = self.create_quintic_scalar_y()
@@ -334,9 +334,9 @@ class path_finder(object):
             for point in self.points:
                 args.append(point.ddx)
                 args.append(point.ddy)
-                args.append(point.magnitude)
+                # args.append(point.magnitude)
 
-            opt.minimize(self.quintic_cost_function, args, method = self.QUINTIC_OPTIMIZE_FUNCTION)
+            opt.minimize(self.quintic_cost_function, args, method = self.QUINTIC_OPTIMIZE_FUNCTION, options={"eps":1.5e-04})
         else:
             opt.minimize(self.cost_function, np.ravel([self.scalars_x, self.scalars_y]), method = self.OPTIMIZE_FUNCTION)
 
@@ -387,7 +387,7 @@ class path_finder(object):
 
                 start_angle = math.atan2(self.dyds(path, s), self.dxds(path, s))
                 
-                if (s+ds < self.MAX):
+                if (s+ds <= self.MAX):
                     tpoints.append(trajectory_point(self.x(path, s+ds), self.y(path, s+ds)))
                     end_angle = math.atan2(self.dyds(path, s+ds), self.dxds(path, s+ds))
                 elif (path + 1 < self.path_amount):
@@ -459,7 +459,7 @@ class path_finder(object):
                 p_time = (t+1)*cycle+bias+time_offset
 
         self.trajectory = traj
-    
+
     def draw_graph(self, res):
         xs = []
         ys = []
@@ -509,7 +509,8 @@ def main(data_from_js):
             path_point["x"],
             path_point["y"],
             path_point["heading"],
-            path_point["mag"])
+            path_point["start_mag"],
+            path_point["end_mag"])
             for path_point in path_data["points"]]
         
         if (index > 0):
@@ -545,7 +546,7 @@ def main(data_from_js):
     print(json.dumps(out_data))
 
     #set this to True to open matplotlib for graphing
-    if False:
+    if True:
         for path in paths:
             tpoints = path.trajectory
 

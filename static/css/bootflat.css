@@ -2890,14 +2890,14 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
   stroke: #101010;
 }
 
-.mag, .slow_dist {
-  width: 60px;
+.start_mag, .end_mag, .slow_dist, .heading {
+  width: 70px;
   transition: ease-in-out 0.15s;
 }
 
-.mag:hover, .slow_dist:hover {
+.start_mag:hover, .end_mag:hover, .slow_dist:hover, .heading:hover {
   transition: ease-in-out 0.15s;
-  width: 100px;
+  width: 80px;
 }
 
 .lds-ellipsis {

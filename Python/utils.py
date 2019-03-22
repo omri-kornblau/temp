@@ -31,25 +31,34 @@ class Robot (object):
     
 class point(object):
     """point in the path defined by the user"""
-    def __init__(self, x, y, angle, mag=1):
+    def __init__(self, x, y, angle, s_mag, e_mag):
         self.x = x
         self.y = y
         self.angle = angle
         
-        self.magnitude = mag
+        self.start_mag = s_mag
+        self.end_mag = e_mag
+
         self.magnitude_factor = 1.2
-        self.dx = math.cos(angle)*self.magnitude
-        self.dy = math.sin(angle)*self.magnitude
+
+        self.dx = math.cos(angle)*self.start_mag
+        self.dy = math.sin(angle)*self.end_mag
         self.ddx = 0
         self.ddy = 0
 
     def distance (self, point):
         return math.sqrt((self.x-point.x)**2 + (self.y-point.y)**2)
 
-    def update_v (self, point):
+    def update_v (self, point, is_start):
         # self.magnitude = self.magnitude_factor*self.distance(point)*0.5
-        self.dx = math.cos(self.angle)*self.magnitude
-        self.dy = math.sin(self.angle)*self.magnitude
+        if is_start:
+            mag = self.start_mag
+        else:
+            mag = self.end_mag
+            
+        self.dx = math.cos(self.angle)*mag
+        self.dy = math.sin(self.angle)*mag
+        
         pass
 
 class trajectory_point(object):

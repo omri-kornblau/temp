@@ -96,7 +96,8 @@ class Point {
     this.data["x"] = Number(this.element.querySelectorAll('.x > input')[0].value);
     this.data["y"] = Number(this.element.querySelectorAll('.y > input')[0].value);
     this.data["heading"] = Number(this.element.querySelectorAll('.heading > input')[0].value)*Math.PI/180;
-    this.data["mag"] = Number(this.element.querySelectorAll('.mag > input')[0].value);
+    this.data["start_mag"] = Number(this.element.querySelectorAll('.start_mag > input')[0].value);
+    this.data["end_mag"] = Number(this.element.querySelectorAll('.end_mag > input')[0].value);
     this.data["slow_dist"] = Number(this.element.querySelectorAll('.slow_dist > input')[0].value);
     this.data["switch"] = String(this.element.querySelectorAll('.switch > label > input')[0].checked);
   }
@@ -164,7 +165,8 @@ class Points {
       addPoint(this.solvePoints[i].data["x"],
                 this.solvePoints[i].data["y"],
                 this.solvePoints[i].data["heading"],
-                this.solvePoints[i].data["mag"],
+                this.solvePoints[i].data["start_mag"],
+                this.solvePoints[i].data["end_mag"],
                 this.solvePoints[i].data["slow_dist"],
                 this.solvePoints[i].data["switch"],
                 false);
@@ -302,7 +304,8 @@ class AppData {
 
       for (let i = 0; i < traj["time"].length; i++) {
         output += toPrec((maxTime - traj["time"][i]), precision) + seperator;
-        output += toPrec(-1*traj["y"][i], precision) + seperator; //patch to handle inverted axis
+        // Inevrted x and y for 1690s robot
+        output += toPrec(-1*traj["y"][i] + real_field_height/2, precision) + seperator; 
         output += toPrec(traj["x"][i], precision) + seperator;
         output += toPrec(traj["right_vel"][i], precision) + seperator;
         output += toPrec(traj["left_vel"][i], precision) + seperator;
@@ -345,7 +348,8 @@ class AppData {
         point["x"],
         point["y"],
         point["heading"],
-        point["mag"],
+        point["start_mag"],
+        point["end_mag"],
         point["slow_dist"],
         point["switch"],
         false);
@@ -431,15 +435,14 @@ function drawPath (path){
     f_ctx.fill();
   }
 
-  for (let i = 0; i < path.traj.length; i+=inc){
-
+  for (let i = 0; i < path_points.length; i+=inc){
     let traj_i = parseInt(i*path.traj.left_vel.length/path_points.length);
     let vel_hue = Math.abs((path.traj.left_vel[traj_i] + path.traj.right_vel[traj_i])/2);
     vel_hue = 100-parseInt(vel_hue*100/appData.getParams().getData()["max_vel"]);
     color = "hsl("+vel_hue+",100%,60%)";
     f_ctx.fillStyle = color;
     f_ctx.beginPath();
-    f_ctx.arc (path.traj.x*pixel_meters, path.traj.y*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
+    f_ctx.arc (path_points[i].x*pixel_meters, path_points[i].y*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
     f_ctx.fill();
   }
 
@@ -585,12 +588,12 @@ function undo_change () {
   change();
 }
 
-function addPoint (x=-1, y=-1, angle=0, mag=1, slow=0, reverse=false, draw=true) {
+function addPoint (x=-1, y=-1, angle=0, start_mag=1, end_mag=1, slow=0, reverse=false, draw=true) {
   if (x < 0) {
     x = Math.min(real_field_width,(appData.getPoints().getData()[appData.getPoints().amount-1]["x"]+1));
     y = Math.min(real_field_width,(appData.getPoints().getData()[appData.getPoints().amount-1]["y"]+1));
   }
-  
+  console.log(start_mag, end_mag);
   $('#points').append(`<tr class="point move-cursor">`+
     `<td class="delete"><a class="btn btn-link btn-small" onclick="alignRobot(this)">` + 
     `<i class="glyphicon glyphicon-object-align-left glyphicon-small"></i>` +
@@ -605,10 +608,10 @@ function addPoint (x=-1, y=-1, angle=0, mag=1, slow=0, reverse=false, draw=true)
     angle*180/Math.PI + 
     `></td>`+
     `<td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" step="0.1" value=` + 
-    String(start_mag) + 
+    start_mag + 
     `></td>` +
     `<td class='end_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" step="0.1" value=` +
-    String(end_mag) +
+    end_mag +
     `></td>` +
     `<td class="slow_dist"><input class="form-control form-control-small" type="number" placeholder="slow" oninput="reset()" step=0.1 value=` +
     slow +
@@ -741,7 +744,7 @@ function solve (command=0) {
   appData.getPoints().update();
   appData.getParams().update();
   
-  let points_data = appData.getPoints().getData();
+  let pointsData = appData.getPoints().getData();
   let params = appData.getParams().getData();
   
   let data = [];
@@ -749,29 +752,29 @@ function solve (command=0) {
   let path_num = 0;
   let move_dir = 1
 
-  for(let i = 0; i < points_data.length; i++)  {
-    if (i == points_data.length - 1) {
+  for(let i = 0; i < pointsData.length; i++)  {
+    if (i == pointsData.length - 1) {
       data.push({
         "params": params, 
-        "points":points_data.slice(start),
+        "points":pointsData.slice(start),
         "scalars_x":appData.getPath()[path_num]["scalars_x"], 
         "scalars_y":appData.getPath()[path_num]["scalars_y"],
         "move_dir":move_dir,
-        "slow_end":points_data[i]["slow_dist"],
-        "slow_start":(start === 0) ? points_data[start]["slow_dist"] : 0
+        "slow_end":pointsData[i]["slow_dist"],
+        "slow_start":(start === 0) ? pointsData[start]["slow_dist"] : 0
       });
     }
       
-    if (points_data[i]["switch"]  == "true") {
+    if (pointsData[i]["switch"]  == "true") {
       if (i !== 0) {
         data.push({
           "params": params, 
-          "points":points_data.slice(start, i + 1),
+          "points":pointsData.slice(start, i + 1),
           "scalars_x":appData.getPath()[path_num]["scalars_x"], 
           "scalars_y":appData.getPath()[path_num]["scalars_y"],
           "move_dir":move_dir,
-          "slow_end":points_data[i]["slow_dist"],
-          "slow_start":(start === 0) ? points_data[start]["slow_dist"] : 0
+          "slow_end":pointsData[i]["slow_dist"],
+          "slow_start":(start === 0) ? pointsData[start]["slow_dist"] : 0
         });
         
         start = i;
