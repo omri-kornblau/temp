@@ -225,7 +225,7 @@
                                 <td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='end_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='slow_dist'><input class="form-control form-control-small" type='number' placeholder="slow" oninput="reset()" value=0 step="0.1"></td>
-                                <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset(this)"><span class="handle"></span></label></td>
+                                <td class='switch'> <a class='switch-checkbox' onclick="toggleCheckBox(this); reset()"><i class="glyphicon glyphicon-retweet"></i></a> </td>
                                 <td class='delete'><a class="btn btn-danger btn-small"
                                     onclick='deletePoint(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
@@ -239,7 +239,7 @@
                                 <td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='end_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='slow_dist'><input class="form-control form-control-small" type='number' placeholder="slow" oninput="reset()" value=0 step="0.1"></td>
-                                <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset()"><span class="handle"></span></label></td>
+                                <td class='switch'><a class="switch-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"onclick='deletePoint(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
                                     </a></td> 

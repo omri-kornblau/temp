@@ -2900,6 +2900,11 @@ a.list-group-item-danger.active, a.list-group-item-danger:hover, a.list-group-it
   width: 80px;
 }
 
+.switch-checkbox > i {color: #CCD1D9;}
+.switch-checkbox > i:hover {color: #AAB2BD;}
+.checked.switch-checkbox > i {color: #DA4453;}
+.checked.switch-checkbox > i:hover {color: #ED5565;}
+
 .lds-ellipsis {
   display: inline-block;
   position: relative;

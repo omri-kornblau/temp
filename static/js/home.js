@@ -99,7 +99,7 @@ class Point {
     this.data["start_mag"] = Number(this.element.querySelectorAll('.start_mag > input')[0].value);
     this.data["end_mag"] = Number(this.element.querySelectorAll('.end_mag > input')[0].value);
     this.data["slow_dist"] = Number(this.element.querySelectorAll('.slow_dist > input')[0].value);
-    this.data["switch"] = String(this.element.querySelectorAll('.switch > label > input')[0].checked);
+    this.data["switch"] = String(this.element.querySelectorAll('.switch > .switch-checkbox')[0].classList.contains('checked'));
   }
 }
 
@@ -355,10 +355,10 @@ class AppData {
         false);
     });
     
-    this.getPoints().update();
-    this.solverData[this.version].points.solvePoints = this.solverData[this.version].points.points;
-    this.updateForms();
-    this.getPoints().update();
+    // this.getPoints().update();
+    // this.solverData[this.version].points.solvePoints = this.solverData[this.version].points.points;
+    // this.updateForms();
+    // this.getPoints().update();
   }
 }
 
@@ -593,7 +593,7 @@ function addPoint (x=-1, y=-1, angle=0, start_mag=1, end_mag=1, slow=0, reverse=
     x = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["x"]+1));
     y = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["y"]+1));
   }
-  console.log(start_mag, end_mag);
+  
   $('#points').append(`<tr class="point move-cursor">`+
     `<td class="delete"><a class="btn btn-link btn-small" onclick="alignRobot(this)">` + 
     `<i class="glyphicon glyphicon-object-align-left glyphicon-small"></i>` +
@@ -616,14 +616,15 @@ function addPoint (x=-1, y=-1, angle=0, start_mag=1, end_mag=1, slow=0, reverse=
     `<td class="slow_dist"><input class="form-control form-control-small" type="number" placeholder="slow" oninput="reset()" step=0.1 value=` +
     slow +
     `></td>` +
-    `<td class="switch"><label class="toggle" onclick="reset()"><input type="checkbox" ${(reverse ? "checked" : "")}>`+
-    `<span class="handle"></span></label></td>` +
+    `<td class='switch'><a class="switch-checkbox ${reverse==='true' ? 'checked' : ''}" `+
+    `onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a></td>` +
     `<td class="delete"><a class="btn btn-danger btn-small" onclick="deletePoint(this)">`+
     `<i class="glyphicon glyphicon-trash glyphicon-small"></i>`+
     `</a></td>`+
     `</tr>`);
+    
 
-    if (draw) {
+  if (draw) {
     reset();
   }
 }
@@ -800,8 +801,12 @@ function solve (command=0) {
     $("#download").show(300);
     newSolve = false;
 
-    appData.saveSolverData(JSON.parse(data))
+    appData.saveSolverData(JSON.parse(data));
 
     newVersion();
   });
+}
+
+function toggleCheckBox (elem) {
+  $(elem).toggleClass('checked');
 }
