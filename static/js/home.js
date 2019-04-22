@@ -616,7 +616,7 @@ function addPoint (x=-1, y=-1, angle=0, start_mag=1, end_mag=1, slow=0, reverse=
     `<td class="slow_dist"><input class="form-control form-control-small" type="number" placeholder="slow" oninput="reset()" step=0.1 value=` +
     slow +
     `></td>` +
-    `<td class="switch"><label class="toggle" onclick="reset()"><input type="checkbox" ${(reverse ? "checked" : "")}>`+
+    `<td class="switch"><label class="toggle" onclick="reset()"><input type="checkbox" ${(reverse === 'true' ? "checked" : "")}>`+
     `<span class="handle"></span></label></td>` +
     `<td class="delete"><a class="btn btn-danger btn-small" onclick="deletePoint(this)">`+
     `<i class="glyphicon glyphicon-trash glyphicon-small"></i>`+
