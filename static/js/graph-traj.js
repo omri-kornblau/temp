@@ -7,10 +7,10 @@ function showGraph () {
     $(".traj-area").hide(200)
   }
   else {
-    $(".traj-area").show(200) 
-    
+    $(".traj-area").show(200)
+
     setTimeout(function() {
-      drawGraph();        
+      drawGraph();
     }, 200);
   }
 }
@@ -19,8 +19,9 @@ function drawGraph () {
   new Chartist.Line('#vel-chart', {
     labels: [appData.getTraj()["time"]],
     series: [
-      setToGraph(appData.getTraj()["time"], appData.getTraj()["right_vel"]),
-      setToGraph(appData.getTraj()["time"], appData.getTraj()["left_vel"])
+      setToGraph(appData.getTraj()["time"], appData.getTraj()["vx"]),
+      setToGraph(appData.getTraj()["time"], appData.getTraj()["vy"]),
+      setToGraph(appData.getTraj()["time"], appData.getTraj()["vel"]),
     ],}, {
     axisX: {
       type: Chartist.AutoScaleAxis,
@@ -39,8 +40,7 @@ function drawGraph () {
     new Chartist.Line('#acc-chart', {
     labels: [appData.getTraj()["time"]],
     series: [
-      setToGraph(appData.getTraj()["time"], appData.getTraj()["right_acc"]),
-      setToGraph(appData.getTraj()["time"], appData.getTraj()["left_acc"])
+      setToGraph(appData.getTraj()["time"], appData.getTraj()["heading"]),
     ],}, {
     axisX: {
       type: Chartist.AutoScaleAxis,
