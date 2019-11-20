@@ -4,7 +4,7 @@ from scipy import optimize as opt
 from utils import trajectory_point
 
 import numpy as np
-import random 
+import random
 import math
 import json
 import sys
@@ -15,7 +15,7 @@ class path_finder(object):
     """docstring for path_finder"""
     POS_COST    = 60000 #60000
     ANGLE_COST  = 6000  #6000
-    RADIUS_COST = 50 #50 
+    RADIUS_COST = 50 #50
     RADIUS_CONT_COST = 10
     LENGTH_COST = 0
 
@@ -28,12 +28,12 @@ class path_finder(object):
     #'Nelder-Mead' 'Powell' 'CG' 'BFGS' 'Newton-CG' 'L-BFGS-B' 'TNC' 'COBYLA' 'SLSQP' 'trust-constr' 'dogleg' 'trust-ncg' 'trust-exact' 'trust-krylov'
     POWERS = []
     length_cost_val = 0
-    
+
     RADIUS_SEG = 1
     RADIUS_COST_POWER = 1
-    
-    #                        meters^2                 radians^2                       
-    COST_TOLS = {"pos_cost": (10**(-2)) **2 , "angle_cost": (1*math.pi/180) **2, "radius_cost": 1, "radius_cont_cost": 100} 
+
+    #                        meters^2                 radians^2
+    COST_TOLS = {"pos_cost": (10**(-2)) **2 , "angle_cost": (1*math.pi/180) **2, "radius_cost": 1, "radius_cont_cost": 100}
 
     #trajectory
     TIME_QUANT  = 1 #ms
@@ -58,7 +58,7 @@ class path_finder(object):
         self.update_costs_weights(params)
         self.trajectory = []
         self.regulator = (np.random.rand(int((self.path_amount+1)*(1/self.RES) + 1)) - 0.5)*self.RES/100
-    
+
     def create_linear_scalar(self, param):
         scalars = np.zeros(len(self.points[:-1]) * (self.HIGHEST_POLYNOM + 1)).\
                      reshape(len(self.points[:-1]), (self.HIGHEST_POLYNOM + 1))
@@ -67,7 +67,7 @@ class path_finder(object):
             param1 = self.points[index].__getattribute__(param)
             param2 = self.points[index + 1].__getattribute__(param)
             m = (param2 - param1) / (self.MAX - self.MIN)
-            b = param1 - self.MIN * m 
+            b = param1 - self.MIN * m
             scalars[index][1] = m
             scalars[index][0] = b
         return scalars
@@ -102,7 +102,7 @@ class path_finder(object):
             p1 = self.points[index+1]
 
             scalars[index][0] = p0.y
-            scalars[index][1] = p0.dy 
+            scalars[index][1] = p0.dy
             scalars[index][2] = 0.5*p0.ddy
             scalars[index][3] = -10*p0.y-6*p0.dy-1.5*p0.ddy+0.5*p1.ddy-4*p1.dy+10*p1.y
             scalars[index][4] = 15*p0.y+8*p0.dy+1.5*p0.ddy-p1.ddy+7*p1.dy-15*p1.y
@@ -115,20 +115,20 @@ class path_finder(object):
             self.HIGHEST_POLYNOM = int(len(scalars_x)/(points_amount-1))-1
             self.scalars_x = np.array(scalars_x).reshape(points_amount-1, self.HIGHEST_POLYNOM+1)
             self.scalars_y = np.array(scalars_y).reshape(points_amount-1, self.HIGHEST_POLYNOM+1)
-        
+
         elif (wanted_poly == 5) and (self.quintic):
             self.scalars_x = self.create_quintic_scalar_x()
             self.scalars_y = self.create_quintic_scalar_y()
 
         else:
             self.scalars_x = self.create_linear_scalar("x")
-            self.scalars_y = self.create_linear_scalar("y")    
-    
+            self.scalars_y = self.create_linear_scalar("y")
+
     def update_poly(self, val):
         poly_diff = val - self.HIGHEST_POLYNOM
 
         if (poly_diff > 0):
-            zeros = np.zeros(len(self.points[:-1]) * (poly_diff)).reshape(len(self.points[:-1]) , poly_diff) 
+            zeros = np.zeros(len(self.points[:-1]) * (poly_diff)).reshape(len(self.points[:-1]) , poly_diff)
             self.scalars_x = np.append(self.scalars_x, zeros , 1)
             self.scalars_y = np.append(self.scalars_y, zeros , 1)
         elif (poly_diff < 0):
@@ -175,18 +175,18 @@ class path_finder(object):
         """
         answer = 0.
         for i in range(len(self.scalars_x[index]) - 1, 1, -1):
-            answer = answer * s + (self.scalars_x[index][i] * i * (i - 1))  
+            answer = answer * s + (self.scalars_x[index][i] * i * (i - 1))
         return answer
 
     def d2yds2(self, index, s):
-        """ 
+        """
         second derivative y
         """
         answer = 0.
         for i in range(len(self.scalars_y[index]) - 1, 1, -1):
             answer = answer * s + (self.scalars_y[index][i] * i * (i - 1))
         return answer
-    
+
     def radius (self, index, s):
         dx = self.dxds(index, s)
         d2x = self.d2xds2(index, s)
@@ -217,7 +217,7 @@ class path_finder(object):
             cost += (utils.delta_angle(start_angle, self.points[index].angle)) ** 2
             cost += (utils.delta_angle(end_angle, self.points[index + 1].angle)) ** 2
         return cost / ((amount_of_points+1) * 2)
-    
+
     def get_radius_cost(self):
         cost = 0
         counter = 0
@@ -239,7 +239,7 @@ class path_finder(object):
                 counter += 1
         cost /= counter
         return cost
-    
+
     def get_length_cost (self):
         return self.length_cost_val
 
@@ -275,15 +275,15 @@ class path_finder(object):
             #cost += ((point.magnitude_factor-1.2))**6 #(0.1**2)*((point.magnitude_factor-1.2))**2
             cost += 415+(-843)*mag+602*(mag**2)+(-177)*(mag**3)+18.5*(mag**4)
         return cost
-    
+
     def cost_function(self, args):
         args = np.array(args)
-        
+
         self.scalars_x = args[:int(len(args) / 2) ]
         self.scalars_y = args[int(len(args) / 2 ):]
         self.scalars_x = np.array(self.scalars_x).reshape(len(self.points) - 1, self.HIGHEST_POLYNOM + 1)
         self.scalars_y = np.array(self.scalars_y).reshape(len(self.points) - 1, self.HIGHEST_POLYNOM + 1)
-        
+
         self.costs["pos_cost"]         = self.get_position_costs()
         self.costs["angle_cost"]       = self.get_angle_costs()
         self.costs["radius_cost"]      = self.get_radius_cost()
@@ -296,7 +296,7 @@ class path_finder(object):
         costs_weighted["radius_cost"]      = self.RADIUS_COST * self.costs["radius_cost"]
         costs_weighted["radius_cont_cost"] = self.RADIUS_CONT_COST * self.costs["radius_cont_cost"]
         costs_weighted["length_cost"]      = self.LENGTH_COST * self.costs["length_cost"]
-        
+
         return sum(costs_weighted.values())
 
     def quintic_cost_function(self, args):
@@ -307,7 +307,7 @@ class path_finder(object):
         
         self.scalars_x = self.create_quintic_scalar_x()
         self.scalars_y = self.create_quintic_scalar_y()
-        
+
         self.costs["pos_cost"]         = self.get_position_costs()
         self.costs["angle_cost"]       = self.get_angle_costs()
         self.costs["radius_cost"]      = self.get_radius_cost()
@@ -354,22 +354,22 @@ class path_finder(object):
         i = 0
         s = self.MAX
 
-        #run forward 
+        #run forward
         for path in range(self.path_amount):
             s -= self.MAX
-            
+
             ds_index = 0
             end_ds = []
 
             while s < self.MAX:
                 #choose 's' increment called ds according to the velocity
                 if (s*(path+1.0) < (self.END_S_THRES+(self.path_amount-1.0)*self.MAX)):
-                    min_vel = abs(tpoints[i].left_vel+tpoints[i].right_vel)/2
+                    min_vel = tpoints[i].vel
                     new_ds = (min_vel*(self.TIME_QUANT/1000.0)) / ((self.dxds(path, s) ** 2 + self.dyds(path, s) ** 2)**0.5)
 
                     ds = max(new_ds, self.DEFAULT_DS)
-                     
-                    #Protection from too high ds   
+
+                    #Protection from too high ds
                     if ds > 0.01:
                         ds = 0.001
 
@@ -381,7 +381,7 @@ class path_finder(object):
 
                 elif ds_index < 0:
                     ds = end_ds[ds_index]
-                    ds_index -= 1    
+                    ds_index -= 1
                 else:
                     ds = self.DEFAULT_DS
 
@@ -396,7 +396,7 @@ class path_finder(object):
                 else:
                     break
 
-                tpoints[i+1].update_distances(tpoints[i], start_angle, end_angle, robot.width)
+                tpoints[i+1].update_distances(tpoints[i])
 
                 total_dist += tpoints[i+1].dist
 
@@ -413,9 +413,8 @@ class path_finder(object):
                 s += ds
 
         tpoints[-1].reset(robot.max_acc)
-
         #run backward
-        while (i > 1): 
+        while (i > 1):
             tpoints[i-1].update_point_backward(tpoints[i], robot.max_vel, robot.max_acc, robot.jerk)
             i -= 1
 
@@ -424,38 +423,51 @@ class path_finder(object):
         for i in range(len(tpoints))[1:]:
             tpoints[i].update_point(tpoints[i-1], self.move_dir)
 
-        #interpolate to cycle time 
-        traj = [trajectory_point(tpoints[0].x, tpoints[0].y, tpoints[0].angle)]
+        #interpolate to cycle time
+        traj = [trajectory_point(tpoints[0].x, tpoints[0].y, tpoints[0].angle, self.points[0].heading)]
         t = 0
         cycle = (robot.cycle/1000.0) #s
         #calc bias to make sure the last point is when V=0
-        bias = tpoints[-1].time - math.floor(tpoints[-1].time/cycle)*cycle 
+        bias = tpoints[-1].time - math.floor(tpoints[-1].time/cycle)*cycle
         traj[0].time = time_offset
-        
+
+        heading_diff = utils.delta_angle(self.points[-1].heading, self.points[0].heading)
+        time_diff = tpoints[-1].time - tpoints[0].time
+        max_angular_acc = robot.max_angular_acc
+        max_angular_vel =  (time_diff - math.sqrt(time_diff**2 - 4*abs(heading_diff)/max_angular_acc)) * max_angular_acc / 2
+        acc_time =  max_angular_vel / max_angular_acc
+
         for i in range(len(tpoints))[1:]:
-            p_time = (t+1)*cycle+bias+time_offset 
+            p_time = (t+1)*cycle+bias+time_offset
             while ((p_time <= tpoints[i].time) and (p_time >= tpoints[i-1].time)):
                 t += 1
-                
+
                 traj.append(trajectory_point(tpoints[i].x, tpoints[i].y, tpoints[i].angle))
-                
+
                 dt  = tpoints[i].time-tpoints[i-1].time
-                
-                dlv = (tpoints[i].left_vel-tpoints[i-1].left_vel)/dt
-                drv = (tpoints[i].right_vel-tpoints[i-1].right_vel)/dt
+                dv = (tpoints[i].vel - tpoints[i-1].vel)/dt
                 dx  = (tpoints[i].x - tpoints[i-1].x)/dt
                 dy  = (tpoints[i].y - tpoints[i-1].y)/dt
                 da  = (utils.delta_angle(tpoints[i].angle, tpoints[i-1].angle))/dt
+                direction = math.atan(dy / dx)
 
                 traj[t].x = dx*p_time - dx*tpoints[i-1].time + tpoints[i-1].x
                 traj[t].y = dy*p_time - dy*tpoints[i-1].time + tpoints[i-1].y
                 traj[t].angle = (da*p_time - da*tpoints[i-1].time + tpoints[i-1].angle) % (2*math.pi)
-                traj[t].right_vel = drv*p_time - drv*tpoints[i-1].time + tpoints[i-1].right_vel
-                traj[t].left_vel  = dlv*p_time - dlv*tpoints[i-1].time + tpoints[i-1].left_vel
-                traj[t].right_acc = (traj[t].right_vel - traj[t-1].right_vel)/cycle
-                traj[t].left_acc  = (traj[t].left_vel - traj[t-1].left_vel)/cycle
+                traj[t].vel = dv*p_time - dv*tpoints[i-1].time + tpoints[i-1].vel
+                traj[t].acc = (traj[t].vel - traj[t-1].vel)/cycle
                 traj[t].time = p_time
                 traj[t].slow = tpoints[i-1].slow
+                traj[t].vx = traj[t].vel * math.cos(direction)
+                traj[t].vy = traj[t].vel * math.sin(direction)
+                if p_time < acc_time:
+                    curr_vel = p_time*max_angular_acc
+                elif p_time < time_diff - acc_time:
+                    curr_vel = max_angular_vel
+                else:
+                    curr_vel = max_angular_vel - (p_time - time_diff + acc_time)*max_angular_acc
+                traj[t].heading = traj[t-1].heading + utils.sign(heading_diff)*curr_vel*cycle
+
                 p_time = (t+1)*cycle+bias+time_offset
 
         self.trajectory = traj
@@ -470,7 +482,7 @@ class path_finder(object):
             for s in np.arange(self.MIN, self.MAX + res, res):
                 ys.append(self.y(index, s))
         return (xs,ys)
- 
+
     def create_path_data(self):
         xs, ys = self.draw_graph(0.001)
         path_points = []
@@ -480,24 +492,24 @@ class path_finder(object):
         return data
 
     def create_traj_data(self):
-        data = {'time':[], 'x':[], 'y':[], 'left_vel':[], 'right_vel':[], 'left_acc':[], 'right_acc':[], 'heading':[], 'slow':[]}
+        data = {'time':[], 'x':[], 'y':[], 'vel':[], 'vx':[], 'vy':[], 'acc':[], 'heading':[], 'slow':[]}
         for tpoint in self.trajectory:
             data["time"].append(tpoint.time)
             data["x"].append(tpoint.x)
             data["y"].append(tpoint.y)
-            data["left_vel"].append(tpoint.left_vel)
-            data["right_vel"].append(tpoint.right_vel)
-            data["left_acc"].append(tpoint.left_acc)
-            data["right_acc"].append(tpoint.right_acc)
-            data["heading"].append(tpoint.angle)
             data["slow"].append(tpoint.slow)
+            data["vel"].append(tpoint.vel)
+            data["vx"].append(tpoint.vx)
+            data["vy"].append(tpoint.vy)
+            data["acc"].append(tpoint.acc)
+            data["heading"].append(tpoint.heading)
 
         return data
 
 def main(data_from_js):
     paths = []
     out_data  = {'path':[], 'traj':{}}
-    out_data['traj'] = {'time':[], 'x':[], 'y':[], 'left_vel':[], 'right_vel':[], 'left_acc':[], 'right_acc':[], 'heading':[], 'slow':[]}
+    out_data['traj'] = {'time':[], 'x':[], 'y':[], 'vel':[], 'vx': [], 'vy': [], 'acc':[], 'heading':[], 'slow':[]}
     parsed_from_js = json.loads(data_from_js)
 
     in_data = parsed_from_js['data']
@@ -508,26 +520,27 @@ def main(data_from_js):
         path_points = [utils.point(
             path_point["x"],
             path_point["y"],
+            path_point["direction"],
             path_point["heading"],
             path_point["start_mag"],
             path_point["end_mag"])
             for path_point in path_data["points"]]
-        
+
         if (index > 0):
             path_points[0].angle += math.pi
 
         paths.append(path_finder(
-            path_data["params"], 
+            path_data["params"],
             path_data["scalars_x"],
             path_data["scalars_y"],
             path_data["move_dir"],
             path_data["slow_start"],
             path_data["slow_end"],
             *path_points))
-    
+
     #setup robot object
     robot = utils.Robot(path_data["params"])
-    
+
     time_offset = 0
 
     for path in paths:
@@ -540,10 +553,10 @@ def main(data_from_js):
         #set data to be sent to GUI
         out_data["path"].append(path.create_path_data())
         out_data["traj"] = utils.merge_dicts(out_data["traj"], path.create_traj_data())
-        
+
         time_offset = path.trajectory[-1].time
 
-    print(json.dumps(out_data))
+    print('#' + json.dumps(out_data))
 
     #set this to True to open matplotlib for graphing
     if True:
@@ -561,7 +574,7 @@ def main(data_from_js):
         sim_v  = 0
         sim_head = tpoints[0].angle
         sim_x, sim_y = [tpoints[0].x], [tpoints[0].y]
-        
+
         for i in range(len(tpoints)):
             left_vel.append(tpoints[i].left_vel)
             right_vel.append(tpoints[i].right_vel)
@@ -571,7 +584,7 @@ def main(data_from_js):
 
             if (i < len(tpoints) -1):
                 dt = (tpoints[i+1].time-tpoints[i].time)
-                
+
                 sim_head += ((right_vel[i]-left_vel[i])/robot.width)*dt
                 sim_x.append(sim_x[i-1]+sim_v*math.cos(sim_head)*dt)
                 sim_y.append(sim_y[i-1]+sim_v*math.sin(sim_head)*dt)
@@ -579,7 +592,7 @@ def main(data_from_js):
                 left_acc.append((tpoints[i+1].left_vel-tpoints[i].left_vel)/dt)
                 right_acc.append((tpoints[i+1].right_vel-tpoints[i].right_vel)/dt)
                 dts.append(tpoints[i+1].time-tpoints[i].time)
-            
+
             times.append(tpoints[i].time)
 
         fig = plt.figure(figsize=(9, 5),dpi=80)
@@ -590,7 +603,7 @@ def main(data_from_js):
         path_p = plt.subplot (3, 2, 5)
         dsdt_p = plt.subplot (3, 2, 6)
 
-        indicies = range(len(tpoints)) 
+        indicies = range(len(tpoints))
 
         acc_p.plot(times[:-1], right_acc)
         acc_p.plot(times[:-1], left_acc)
@@ -614,7 +627,7 @@ def main(data_from_js):
         dsdt_p.plot(times[:-1], dts)
         dsdt_p.set(xlabel='time', ylabel='ds/dt [S/s]')
         dsdt_p.grid()
-        
+
         plt.show()
         plt.close('all')
 

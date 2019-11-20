@@ -56,7 +56,7 @@ function putAngleInRange (angle, radians=true) {
   while (angle >= 360) {
     angle -= 360;
   }
- 
+
   while (angle < 0) {
     angle += 360;
   }
@@ -66,26 +66,38 @@ function putAngleInRange (angle, radians=true) {
 class Point {
   constructor(elem) {
     this.color = "rgba(255,255,255, 0.5)";
-    this.data = {};  
+    this.directionColor = "rgba(255,255,255, 0.5)";
+    this.headingColor = "rgba(255,50,50, 0.5)";
+    this.data = {};
     this.size = POINT_SIZE;
-    this.element = elem; 
+    this.element = elem;
     this.getDataFromElement();
   }
 
   draw(px2m) {
+    let angle, armLen;
+    p_ctx.beginPath();
+    angle = this.data["direction"];
+    armLen = 20;
+    p_ctx.strokeStyle = this.directionColor;
+    p_ctx.moveTo(this.data["x"]*px2m+Math.cos(angle)*this.size, this.data["y"]*px2m+Math.sin(angle)*this.size);
+    p_ctx.lineTo(this.data["x"]*px2m+Math.cos(angle)*armLen, this.data["y"]*px2m+Math.sin(angle)*armLen);
+    p_ctx.lineCap = 'round';
+    p_ctx.lineWidth = 4;
+    p_ctx.stroke();
+    p_ctx.beginPath();
+    angle = this.data["heading"];
+    armLen = 15;
+    p_ctx.strokeStyle = this.headingColor;
+    p_ctx.moveTo(this.data["x"]*px2m+Math.cos(angle)*this.size, this.data["y"]*px2m+Math.sin(angle)*this.size);
+    p_ctx.lineTo(this.data["x"]*px2m+Math.cos(angle)*armLen, this.data["y"]*px2m+Math.sin(angle)*armLen);
+    p_ctx.lineCap = 'round';
+    p_ctx.lineWidth = 3;
+    p_ctx.stroke();
     p_ctx.beginPath();
     p_ctx.arc (this.data["x"]*px2m, this.data["y"]*px2m, this.size, 0, 2*Math.PI);
     p_ctx.fillStyle = this.color;
     p_ctx.fill();
-    p_ctx.beginPath();
-    let angle = this.data["heading"];
-    let armLen = 15;
-    p_ctx.strokeStyle = this.color;
-    p_ctx.moveTo(this.data["x"]*px2m+Math.cos(angle)*this.size, this.data["y"]*px2m+Math.sin(angle)*this.size);
-    p_ctx.lineTo(this.data["x"]*px2m+Math.cos(angle)*armLen, this.data["y"]*px2m+Math.sin(angle)*armLen);
-    p_ctx.lineCap = 'round';
-    p_ctx.lineWidth = 1;
-    p_ctx.stroke();
   }
 
   distance(point_x, point_y) {
@@ -95,6 +107,7 @@ class Point {
   getDataFromElement () {
     this.data["x"] = Number(this.element.querySelectorAll('.x > input')[0].value);
     this.data["y"] = Number(this.element.querySelectorAll('.y > input')[0].value);
+    this.data["direction"] = Number(this.element.querySelectorAll('.direction > input')[0].value)*Math.PI/180;
     this.data["heading"] = Number(this.element.querySelectorAll('.heading > input')[0].value)*Math.PI/180;
     this.data["start_mag"] = Number(this.element.querySelectorAll('.start_mag > input')[0].value);
     this.data["end_mag"] = Number(this.element.querySelectorAll('.end_mag > input')[0].value);
@@ -118,7 +131,7 @@ class Points {
       this.points.push(new Point(points_elements[i]));
     }
     this.amount = points_elements.length;
-    
+
     this.add_handlers();
   }
 
@@ -127,7 +140,7 @@ class Points {
     let points = [];
     for (let i = 0; i < this.amount; i++) {
       points.push(this.points[i].data);
-    } 
+    }
     return (points);
   }
 
@@ -164,6 +177,7 @@ class Points {
     for (let i = 0; i < this.solvePoints.length; i++) {
       addPoint(this.solvePoints[i].data["x"],
                 this.solvePoints[i].data["y"],
+                this.solvePoints[i].data["direction"],
                 this.solvePoints[i].data["heading"],
                 this.solvePoints[i].data["start_mag"],
                 this.solvePoints[i].data["end_mag"],
@@ -197,8 +211,8 @@ class Params {
     let input_elements = document.getElementsByClassName("form-control-param");
     for (let i = 0; i < input_elements.length; i++) {
       //handle cases where there are no costs (e.g. init)
-        input_elements[i].value = this.params[input_elements[i].getAttribute('id')]; 
-    }      
+        input_elements[i].value = this.params[input_elements[i].getAttribute('id')];
+    }
 
     if (path_data[0]["costs"] != NaN) {
         document.getElementById("pos_cost_val").innerHTML = path_data[0]["costs"]["pos_cost"].toPrecision(3);
@@ -217,7 +231,7 @@ class Params {
 }
 
 class AppData {
-  constructor() {   
+  constructor() {
     this.version = 0;
     this.name = "untitled";
     let defaultData = {
@@ -252,7 +266,7 @@ class AppData {
     this.version ++;
 
     this.solverData[this.version]["points"].update();
-    this.solverData[this.version]["points"].savePoints(); 
+    this.solverData[this.version]["points"].savePoints();
   }
 
   saveSolverData (solverData) {
@@ -291,7 +305,7 @@ class AppData {
     return(this.solverData[this.version]["path"]);
   }
   getTraj () {
-    return(this.solverData[this.version]["traj"]); 
+    return(this.solverData[this.version]["traj"]);
   }
 
   createTrajFile (precision=3) {
@@ -365,12 +379,16 @@ class AppData {
 function pointHover (elem, hover) {
   point = appData.getPoints().getPointByElement(elem);
   if (hover) {
-    point.size = POINT_SIZE*1.2;
+    point.size = POINT_SIZE*1.3;
     point.color = "rgba(255,255,255, 0.9)";
+    point.directionColor = "rgba(255,255,255, 0.9)";
+    point.headingColor = "rgba(255,50,50, 0.9)";
   }
   else {
     point.size = POINT_SIZE;
     point.color = "rgba(255,255,255, 0.5)";
+    point.directionColor = "rgba(255,255,255, 0.5)";
+    point.headingColor = "rgba(255,50,50, 0.5)";
   }
 
   appData.getPoints().draw();
@@ -386,46 +404,48 @@ function drawPath (path){
 
   let robotWidth = appData.getParams().params["width"];
   f_ctx.beginPath();
-  
-  let inc = 2; 
+
+  let inc = 2;
   for (let i = 0; i < path_points.length - inc; i+=inc){
     let val = parseInt(i*100/path_points.length);
     color = "#bbbbbb";
     f_ctx.fillStyle = color;
     f_ctx.beginPath();
-    
+
     let x = path_points[i]["x"];
     let y = path_points[i]["y"];
     let x1 = path_points[i+inc]["x"];
     let y1 = path_points[i+inc]["y"];
 
-    let alpha = Math.atan2((y1-y),(x1-x));
-    
+    let traj_i = parseInt(i*appData.getTraj()["heading"].length/path_points.length);
+    let heading = appData.getTraj()["heading"][traj_i];
+    let alpha = heading;
+
     x = x + Math.cos(alpha)*robot_height/2;
     y = y + Math.sin(alpha)*robot_height/2;
 
     let xr = Math.cos(alpha+Math.PI/2)*robotWidth/2 + x;
     let yr = Math.sin(alpha+Math.PI/2)*robotWidth/2 + y;
-    
+
     let xl = Math.cos(alpha-Math.PI/2)*robotWidth/2 + x;
     let yl = Math.sin(alpha-Math.PI/2)*robotWidth/2 + y;
 
     f_ctx.arc (xr*pixel_meters, yr*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
     f_ctx.arc (xl*pixel_meters, yl*pixel_meters, PATH_SIZE, 0, 2*Math.PI);
     f_ctx.fill();
-    
+
     color = "#666666";
     f_ctx.fillStyle = color;
 
     x = path_points[i]["x"];
     y = path_points[i]["y"];
-    
+
     x = x + Math.cos(alpha+Math.PI)*robot_height/2;
     y = y + Math.sin(alpha+Math.PI)*robot_height/2;
 
     xr = Math.cos(alpha+Math.PI/2)*robotWidth/2 + x;
     yr = Math.sin(alpha+Math.PI/2)*robotWidth/2 + y;
-    
+
     xl = Math.cos(alpha-Math.PI/2)*robotWidth/2 + x;
     yl = Math.sin(alpha-Math.PI/2)*robotWidth/2 + y;
 
@@ -485,15 +505,15 @@ function initField() {
         && (Math.abs(panTrackY+diffY) <= (realFieldHeight*zoomAmount - realFieldHeight)*pixel_meters);
   
       if ((zoomAmount > 1) && isInCanvas) {
-        
+
         panTrackX += diffX;
         panTrackY += diffY;
-  
+
         p_ctx.transform(1, 0, 0, 1, diffX, diffY);
         f_ctx.transform(1, 0, 0, 1, diffX, diffY);
-        
+
         drawField();
-  
+
       }
 
       prevMouseX = event.x;
@@ -525,7 +545,7 @@ function drawField(cleanPath=false) {
       }
     }
     document.getElementById("version-header").innerHTML = appData.version + " / " + (appData.solverData.length-1)
-    
+
     //f_ctx.shadowBlur = 10;
     appData.getPoints().draw();
 
@@ -538,7 +558,7 @@ function updateForms () {
       document.getElementById("method").checked = false;
     }
     else {
-      document.getElementById("method").disabled = false; 
+      document.getElementById("method").disabled = false;
     }
 }
 
@@ -547,9 +567,9 @@ function newVersion() {
   clickedGraph = false;
 
   showGraph();
-  
+
   setDuration("Duration: ");
-  
+
   drawField();
 }
 
@@ -561,7 +581,7 @@ function reset(cleanPath=true) {
     $("#download").hide(300);
     $(".traj-area").hide(200);
   }
-  drawField(cleanPath); 
+  drawField(cleanPath);
 }
 
 function change () {
@@ -570,7 +590,7 @@ function change () {
   clickedGraph = true;
   newSolve = false;
   drawField(false);
-  $("#download").show(100); 
+  $("#download").show(100);
 }
 
 function resetData () {
@@ -588,7 +608,7 @@ function undo_change () {
   change();
 }
 
-function addPoint (x=-1, y=-1, angle=0, start_mag=1, end_mag=1, slow=0, reverse=false, draw=true) {
+function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, slow=0, reverse=false, draw=true) {
   if (x < 0) {
     x = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["x"]+1));
     y = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["y"]+1));
@@ -604,9 +624,12 @@ function addPoint (x=-1, y=-1, angle=0, start_mag=1, end_mag=1, slow=0, reverse=
     `<td class="y"><input class="form-control form-control-small" type="number" step="0.1" placeholder="Y" oninput="reset()" value=` +
     y + 
     `></td>`+
-    `<td class="heading"><input class="form-control form-control-small" type="number" placeholder="α" oninput="reset()" step="5" value=`+
-    angle*180/Math.PI + 
-    `></td>`+
+    "<td class='direction'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
+    direction*180/Math.PI +
+    "></td>"+
+    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
+    heading*180/Math.PI +
+    "></td>"+
     `<td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" step="0.1" value=` + 
     start_mag + 
     `></td>` +
@@ -623,6 +646,32 @@ function addPoint (x=-1, y=-1, angle=0, start_mag=1, end_mag=1, slow=0, reverse=
     `</a></td>`+
     `</tr>`);
     
+
+  $('#points').append("<tr class='point move-cursor'>"+
+    "<td class='delete'><a class='btn btn-link btn-small' onclick='alignRobot(this)'>" +
+    "<i class='glyphicon glyphicon-object-align-left glyphicon-small'></i>" +
+    "</a></td>" +
+    "<td class='x'><input class='form-control form-control-small' type='number' step='0.1' placeholder='X' oninput='reset()' value=" +
+    x +
+    "></td>" +
+    "<td class='y'><input class='form-control form-control-small' type='number' step='0.1' placeholder='Y' oninput='reset()' value=" +
+    y +
+    "></td>"+
+    "<td class='direction'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
+    direction*180/Math.PI +
+    "></td>"+
+    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
+    heading*180/Math.PI +
+    "></td>"+
+    "<td class='mag'><input class='form-control form-control-small' type='number' placeholder='mag' oninput='reset()' value='1' step='5'></td>" +
+
+    "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset()' "+
+    reverse +
+    "><span class='handle'></span></label></td>"+
+    "<td class='delete'><a class='btn btn-danger btn-small' onclick='deletePoint(this)'>"+
+    "<i class='glyphicon glyphicon-trash glyphicon-small'></i>"+
+    "</a></td>"+
+    "</tr>");
 
   if (draw) {
     reset();
@@ -700,10 +749,10 @@ function zoom (amount) {
   if (amount > 0) {
     f_ctx.transform(1, 0, 0, 1, -panTrackX, -panTrackY);
     p_ctx.transform(1, 0, 0, 1, -panTrackX, -panTrackY);
-  
+
     panTrackX = 0;
     panTrackY = 0;
-  
+
     if (zoomAmount*amount >= 1) {
       p_ctx.transform(amount, 0, 0, amount, 0, 0);
       f_ctx.transform(amount, 0, 0, amount, 0, 0);
@@ -712,13 +761,13 @@ function zoom (amount) {
   }
   else {
     amount = 0.8;
-    
+
     f_ctx.transform(1, 0, 0, 1, -panTrackX, -panTrackY);
     p_ctx.transform(1, 0, 0, 1, -panTrackX, -panTrackY);
 
     panTrackX = 0;
     panTrackY = 0;
-    
+
     while (zoomAmount > 1) {
       p_ctx.transform(amount, 0, 0, amount, 0, 0);
       f_ctx.transform(amount, 0, 0, amount, 0, 0);

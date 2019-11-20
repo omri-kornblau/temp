@@ -10,7 +10,7 @@ var path = require('path');
 function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({width: 1200, height: 800, icon: path.join(__dirname, 'static/img/favicon.png')})
-    
+
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')
 
@@ -87,7 +87,11 @@ const server = http.createServer((req, res) => {
         var pyshell = new PythonShell(python_script, options);
         pyshell.on('message', function (message) {
           // received a message sent from the Python script (a simple "print" statement)
-            res.end(message);
+            if (message[0] === '#') {
+              res.end(message.slice(1));
+            } else {
+              console.log(message)
+            }
             });
 
             pyshell.end(function (err,code,signal) {if (err) throw err;});

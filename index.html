@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>Path Finder</title>
+        <title>Path Finder - Swerve </title>
         <link rel="stylesheet" href="static/css/bootstrap.min.css">
         <link rel="stylesheet" href="static/css/chartist.css">
         <link rel="stylesheet" href="static/css/bootflat.css">
@@ -14,11 +14,11 @@
             <button type="button" class="close" onclick="showGraph()" aria_hidden="true">x</button>
             <div class="panel-heading"> </div>
             <div class="traj-chart" ondblclick="return resetVelGraph();" id="vel-chart">
-                <h5>Velocities</h5>
+                <h5>Velocity</h5>
                 <i id="vel-zoom-icon" class="glyphicon glyphicon-zoom-in zoom-icon"></i>
             </div>
             <div class="traj-chart" style="padding-top: 15px;" ondblclick="return resetAccGraph();" id="acc-chart">
-                <h5>Accelerations</h5>
+                <h5>Heading</h5>
                 <i id="acc-zoom-icon" class="glyphicon glyphicon-zoom-in zoom-icon"></i>
             </div>
         </div>
@@ -37,12 +37,40 @@
             </div>
         </div>
             <div class="jumbotron-contents" style="text-align: center">
-                <div class="canvas-wraper">
-                    <canvas id="field_canvas" width="680" height="340"> </canvas> 
-                    <canvas id="points_canvas" width="680" height="340"> </canvas> 
+                <div class="row align-items-start">
+                    <div class="col-xs-3" style="text-align: center">
+                        <div class="solve-group">
+                            <div class="btn-group">
+                                <a class="btn btn-danger" onclick="solve()"><i class="glyphicon glyphicon-fire"></i> FIND</a>
+                                <a class="btn btn-danger" onclick="resetData(); drawField(true);"><i class="glyphicon glyphicon-repeat"></i></a>
+                            </div>
+
+                            <div>
+                                <h6 id="version-header"></h6>
+                            </div>
+
+                        </div>
+                        <div id="download" class="solve-group"" style="display: none;">
+                                <h6 id="time-header"></h6>
+
+                            <div class="btn-group">
+                                <a class="btn btn-success" onclick="saveTraj()"><i class="glyphicon glyphicon-download-alt"></i> SAVE</a>
+                                <a class="btn btn-success" onclick="showGraph();"><i class="glyphicon glyphicon-stats"></i></a>
+                                <a class="btn btn-success" onclick="solve(1);"><i class="glyphicon glyphicon-refresh"></i></a>
+                            </div>
+                        </div>
+
+                        <div id="loader" class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+                    </div>
+                    <div class="col-xs-8">
+                        <div class="canvas-wraper">
+                            <canvas id="field_canvas" width="680" height="340"> </canvas>
+                            <canvas id="points_canvas" width="680" height="340"> </canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="jumbotron-footer" style="text-align: center"> 
+            <div class="jumbotron-footer" style="text-align: center">
                 <div class="btn-group">
                     <button type="button" class="btn btn-primary" onclick="undo_change()"><i class="glyphicon glyphicon-chevron-left"></i></button>
                     <button type="button" class="btn btn-primary" onclick="redo_change()"><i class="glyphicon glyphicon-chevron-right"></i></button>
@@ -151,6 +179,9 @@
                                         <td>Jerk</td>
                                             <td><input class="param form-control form-control-param" type='number' placeholder="enter val.." id="jerk" value=100 ></td>
                                         </tr>
+                                        <td>Max Angular Acceleration</td>
+                                            <td><input class="param form-control form-control-param" type='number' placeholder="enter val.." id="max_angular_acc" value=5 ></td>
+                                        </tr>
                                         <tr>
                                             <td>Robot Wheels Width</td>
                                             <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="width" value=0.75 ></td>
@@ -172,31 +203,7 @@
             </div>
             </div>
         </div>
-        <div class="col-md-2" style="text-align: center">
-            <div class="solve-group"">
-                <div class="btn-group">
-                    <a class="btn btn-danger" onclick="solve()"><i class="glyphicon glyphicon-fire"></i> FIND</a>
-                    <a class="btn btn-danger" onclick="resetData(); drawField(true);"><i class="glyphicon glyphicon-repeat"></i></a>
-                </div>
-
-                <div> 
-                    <h6 id="version-header"></h6>
-                </div>
-
-            </div>
-            <div id="download" class="solve-group"" style="display: none;">
-                    <h6 id="time-header"></h6>
-                
-                <div class="btn-group">
-                    <a class="btn btn-success" onclick="saveTraj()"><i class="glyphicon glyphicon-download-alt"></i> SAVE</a>
-                    <a class="btn btn-success" onclick="showGraph();"><i class="glyphicon glyphicon-stats"></i></a>
-                    <a class="btn btn-success" onclick="solve(1);"><i class="glyphicon glyphicon-refresh"></i></a>
-                </div> 
-            </div>
-
-            <div id="loader" class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
-        </div>
-        <div class="col-md-5">
+        <div class="col-md-7">
             <div class="panel panel-primary">
               <div class="panel-heading" style="text-align: center;">
                 <a class="panel-title">Points <!--    <a class="btn btn-link" style="color:white;"><i class="glyphicon glyphicon-plus-sign"></i></a> --></a>
@@ -210,10 +217,12 @@
                             <th> </th>
                             <th>X</th>
                             <th>Y</th>
-                            <th>Head</th>
+                            <th>Direction</th>
+                            <th>Heading</th>
                             <th>Mag<span style="font-size: 70%"> in</span></th>
                             <th>Mag<span style="font-size: 70%"> out</span></th>
                             <th>Slow</th>
+                            <th>switch</th>
                             <th></th>
                         </thead>
                         <tbody  id="points">
@@ -221,20 +230,23 @@
                                 <td class='delete'><a class="btn btn-link btn-small" onclick='alignRobot(this)'><i class="glyphicon glyphicon-object-align-left glyphicon-small"></i></a></td>
                                 <td class='x'><input class="form-control form-control-small" type='number' step="0.1" placeholder="X" oninput="reset()" value=1 ></td>
                                 <td class='y'><input class="form-control form-control-small" type='number' step="0.1" placeholder="Y" oninput="reset()" value=1 ></td>
-                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=90 step="5"></td>
+                                <td class='direction'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=90 step="5"></td>
+                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="β" oninput="reset()" value=90 step="5"></td>
                                 <td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='end_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='slow_dist'><input class="form-control form-control-small" type='number' placeholder="slow" oninput="reset()" value=0 step="0.1"></td>
                                 <td class='switch'> <a class='switch-checkbox' onclick="toggleCheckBox(this); reset()"><i class="glyphicon glyphicon-retweet"></i></a> </td>
+                                <!-- <td class='switch'><label class="toggle"><input type="checkbox" onclick="reset(this)"><span class="handle"></span></label></td> -->
                                 <td class='delete'><a class="btn btn-danger btn-small"
                                     onclick='deletePoint(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
-                                    </a></td> 
+                                    </a></td>
                             </tr>
                             <tr class="point move-cursor">
                                 <td class='delete'><a class="btn btn-link btn-small" onclick='alignRobot(this)'><i class="glyphicon glyphicon-object-align-left glyphicon-small"></i></a></td>
                                 <td class='x'><input class="form-control form-control-small" type='number' step="0.1" placeholder="X" oninput="reset()" value=2 ></td>
                                 <td class='y'><input class="form-control form-control-small" type='number' step="0.1" placeholder="Y" oninput="reset()" value=2 ></td>
+                                <td class='direction'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=90 step="5"></td>
                                 <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=0 step="5"></td>
                                 <td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='end_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
@@ -242,7 +254,7 @@
                                 <td class='switch'><a class="switch-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"onclick='deletePoint(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
-                                    </a></td> 
+                                    </a></td>
                             </tr>
                         </tbody>
                         </table>
@@ -255,7 +267,7 @@
 
         <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
         <!-- JQuery -->
-        <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script> 
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
         <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
         <!-- Bootstrap -->
         <script src="https://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
