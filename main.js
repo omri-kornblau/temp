@@ -78,7 +78,7 @@ const server = http.createServer((req, res) => {
           mode: 'text',
           pythonPath: '/usr/bin/python3',
           pythonOptions: ['-u'], // get print results in real-time
-          scriptPath: './Python',
+          scriptPath: `${__dirname}/Python`,
           args: [input]
         };
 	    }
@@ -87,7 +87,7 @@ const server = http.createServer((req, res) => {
            	   mode: 'text',
            	   pythonPath: 'python',
            	   pythonOptions: ['-u'], // get print results in real-time
-           	   scriptPath: 'Python',
+           	   scriptPath: `${__dirname}/Python`,
            	   args: [input]
               };
 	    }
