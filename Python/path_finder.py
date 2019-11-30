@@ -418,10 +418,19 @@ class path_finder(object):
             tpoints[i-1].update_point_backward(tpoints[i], robot.max_vel, robot.max_acc, robot.jerk)
             i -= 1
 
-        #re calc time by velocities
+        spin_start_time = time_offset
+        spin_stop_time = 0
         tpoints[0].time = time_offset
         for i in range(len(tpoints))[1:]:
+            #re calc time by velocities
             tpoints[i].update_point(tpoints[i-1], self.move_dir)
+            if (tpoints[i].slow != tpoints[i-1].slow):
+                if (tpoints[i].slow):
+                    spin_stop_time = tpoints[i].time
+                else:
+                    spin_start_time = tpoints[i].time
+        if (spin_stop_time == 0):
+            spin_stop_time = tpoints[-1].time
 
         #interpolate to cycle time
         traj = [trajectory_point(tpoints[0].x, tpoints[0].y, tpoints[0].angle, self.points[0].heading)]
@@ -431,14 +440,8 @@ class path_finder(object):
         bias = tpoints[-1].time - math.floor(tpoints[-1].time/cycle)*cycle
         traj[0].time = time_offset
 
-        heading_diff = utils.delta_angle(self.points[-1].heading, self.points[0].heading)
-        time_diff = tpoints[-1].time - tpoints[0].time
-        max_angular_acc = robot.max_angular_acc
-        max_angular_vel =  (time_diff - math.sqrt(time_diff**2 - 4*abs(heading_diff)/max_angular_acc)) * max_angular_acc / 2
-        acc_time =  max_angular_vel / max_angular_acc
-
         for i in range(len(tpoints))[1:]:
-            p_time = (t+1)*cycle+bias+time_offset
+            p_time = (t+1)*cycle+time_offset+bias
             while ((p_time <= tpoints[i].time) and (p_time >= tpoints[i-1].time)):
                 t += 1
 
@@ -450,7 +453,6 @@ class path_finder(object):
                 dy  = (tpoints[i].y - tpoints[i-1].y)/dt
                 da  = (utils.delta_angle(tpoints[i].angle, tpoints[i-1].angle))/dt
                 direction = math.atan(dy / dx)
-
                 traj[t].x = dx*p_time - dx*tpoints[i-1].time + tpoints[i-1].x
                 traj[t].y = dy*p_time - dy*tpoints[i-1].time + tpoints[i-1].y
                 traj[t].angle = (da*p_time - da*tpoints[i-1].time + tpoints[i-1].angle) % (2*math.pi)
@@ -460,15 +462,28 @@ class path_finder(object):
                 traj[t].slow = tpoints[i-1].slow
                 traj[t].vx = traj[t].vel * math.cos(direction)
                 traj[t].vy = traj[t].vel * math.sin(direction)
-                if p_time < acc_time:
-                    curr_vel = p_time*max_angular_acc
-                elif p_time < time_diff - acc_time:
+
+                p_time = (t+1)*cycle+time_offset+bias
+
+        heading_diff = utils.delta_angle(self.points[-1].heading, self.points[0].heading)
+        time_diff = spin_stop_time - spin_start_time
+        max_angular_acc = robot.max_angular_acc
+        max_angular_vel =  (time_diff - math.sqrt(time_diff**2 - 4*abs(heading_diff)/max_angular_acc)) * max_angular_acc / 2
+        acc_time =  max_angular_vel / max_angular_acc
+        head_time = time_offset
+        for i in range(len(traj))[1:]:
+            head_time += cycle
+            if (head_time >= spin_start_time and head_time <= spin_stop_time):
+                spin_time = head_time - spin_start_time 
+                if spin_time < acc_time:
+                    curr_vel = spin_time*max_angular_acc
+                elif spin_time < time_diff - acc_time:
                     curr_vel = max_angular_vel
                 else:
-                    curr_vel = max_angular_vel - (p_time - time_diff + acc_time)*max_angular_acc
-                traj[t].heading = traj[t-1].heading + utils.sign(heading_diff)*curr_vel*cycle
-
-                p_time = (t+1)*cycle+bias+time_offset
+                    curr_vel = max_angular_vel - (spin_time - time_diff + acc_time)*max_angular_acc
+                traj[i].heading = traj[i-1].heading + utils.sign(heading_diff)*curr_vel*cycle
+            else:
+                traj[i].heading = traj[i-1].heading
 
         self.trajectory = traj
 
@@ -563,34 +578,28 @@ def main(data_from_js):
         for path in paths:
             tpoints = path.trajectory
 
-        left_vel  = []
-        right_vel = []
-        left_acc  = []
-        right_acc = []
+        vx  = []
+        vy = []
         times = []
+        headings = []
 
         dts = []
 
-        sim_v  = 0
-        sim_head = tpoints[0].angle
         sim_x, sim_y = [tpoints[0].x], [tpoints[0].y]
 
         for i in range(len(tpoints)):
-            left_vel.append(tpoints[i].left_vel)
-            right_vel.append(tpoints[i].right_vel)
+            vx.append(tpoints[i].vx)
+            vy.append(tpoints[i].vy)
+            headings.append(tpoints[i].heading)
 
-            sim_v = 2*((right_vel[i]+left_vel[i])/2)
+            vel = math.sqrt(vx[i]**2 + vy[i]**2)
             #sim_head = tpoints[i].angle
 
             if (i < len(tpoints) -1):
                 dt = (tpoints[i+1].time-tpoints[i].time)
 
-                sim_head += ((right_vel[i]-left_vel[i])/robot.width)*dt
-                sim_x.append(sim_x[i-1]+sim_v*math.cos(sim_head)*dt)
-                sim_y.append(sim_y[i-1]+sim_v*math.sin(sim_head)*dt)
-
-                left_acc.append((tpoints[i+1].left_vel-tpoints[i].left_vel)/dt)
-                right_acc.append((tpoints[i+1].right_vel-tpoints[i].right_vel)/dt)
+                sim_x.append(sim_x[i-1] + vx[i])
+                sim_y.append(sim_y[i-1] + vy[i])
                 dts.append(tpoints[i+1].time-tpoints[i].time)
 
             times.append(tpoints[i].time)
@@ -603,15 +612,13 @@ def main(data_from_js):
         path_p = plt.subplot (3, 2, 5)
         dsdt_p = plt.subplot (3, 2, 6)
 
-        indicies = range(len(tpoints))
-
-        acc_p.plot(times[:-1], right_acc)
-        acc_p.plot(times[:-1], left_acc)
-        acc_p.set(xlabel='', ylabel='Acceleration [m/s2]')
+        # acc_p.plot(times, headings)
+        acc_p.plot(times, np.gradient(headings))
+        acc_p.set(xlabel='', ylabel='Heading')
         acc_p.grid()
 
-        traj_p.plot(times, right_vel, label='left')
-        traj_p.plot(times, left_vel, label='right')
+        traj_p.plot(times, vy, label='vx')
+        traj_p.plot(times, vx, label='vy')
         handles, labels = traj_p.get_legend_handles_labels()
         traj_p.legend(handles, labels)
         traj_p.set(xlabel='', ylabel='Velocity [m/s]')

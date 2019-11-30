@@ -321,8 +321,8 @@ class AppData {
         // Inevrted x and y for 1690s robot
         output += toPrec(-1*traj["y"][i] + realFieldHeight/2, precision) + seperator; 
         output += toPrec(traj["x"][i], precision) + seperator;
-        output += toPrec(traj["right_vel"][i], precision) + seperator;
-        output += toPrec(traj["left_vel"][i], precision) + seperator;
+        output += toPrec(-1*traj["vy"][i], precision) + seperator;
+        output += toPrec(traj["vx"][i], precision) + seperator;
         output += toPrec(putAngleInRange(traj["heading"][i]), precision) + seperator;
         output += (traj["slow"][i] ? "1" : "0") + seperator;
         output += "\n";
@@ -456,8 +456,8 @@ function drawPath (path){
   }
 
   for (let i = 0; i < path_points.length; i+=inc){
-    let traj_i = parseInt(i*path.traj.left_vel.length/path_points.length);
-    let vel_hue = Math.abs((path.traj.left_vel[traj_i] + path.traj.right_vel[traj_i])/2);
+    let traj_i = parseInt(i*path.traj.vel.length/path_points.length);
+    let vel_hue = Math.abs(path.traj.vel[traj_i])
     vel_hue = 100-parseInt(vel_hue*100/appData.getParams().getData()["max_vel"]);
     color = "hsl("+vel_hue+",100%,60%)";
     f_ctx.fillStyle = color;
@@ -639,40 +639,13 @@ function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, s
     `<td class="slow_dist"><input class="form-control form-control-small" type="number" placeholder="slow" oninput="reset()" step=0.1 value=` +
     slow +
     `></td>` +
-    `<td class="switch"><label class="toggle" onclick="reset()"><input type="checkbox" ${(reverse === 'true' ? "checked" : "")}>`+
-    `<span class="handle"></span></label></td>` +
+    // `<td class="switch"><label class="toggle" onclick="reset()"><input type="checkbox" ${(reverse === 'true' ? "checked" : "")}>`+
+    `<td class='switch'><a class="switch-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a>` +
+    `</td>` +
     `<td class="delete"><a class="btn btn-danger btn-small" onclick="deletePoint(this)">`+
     `<i class="glyphicon glyphicon-trash glyphicon-small"></i>`+
     `</a></td>`+
     `</tr>`);
-    
-
-  $('#points').append("<tr class='point move-cursor'>"+
-    "<td class='delete'><a class='btn btn-link btn-small' onclick='alignRobot(this)'>" +
-    "<i class='glyphicon glyphicon-object-align-left glyphicon-small'></i>" +
-    "</a></td>" +
-    "<td class='x'><input class='form-control form-control-small' type='number' step='0.1' placeholder='X' oninput='reset()' value=" +
-    x +
-    "></td>" +
-    "<td class='y'><input class='form-control form-control-small' type='number' step='0.1' placeholder='Y' oninput='reset()' value=" +
-    y +
-    "></td>"+
-    "<td class='direction'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
-    direction*180/Math.PI +
-    "></td>"+
-    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
-    heading*180/Math.PI +
-    "></td>"+
-    "<td class='mag'><input class='form-control form-control-small' type='number' placeholder='mag' oninput='reset()' value='1' step='5'></td>" +
-
-    "<td class='switch'><label class='toggle'><input type='checkbox' onclick='reset()' "+
-    reverse +
-    "><span class='handle'></span></label></td>"+
-    "<td class='delete'><a class='btn btn-danger btn-small' onclick='deletePoint(this)'>"+
-    "<i class='glyphicon glyphicon-trash glyphicon-small'></i>"+
-    "</a></td>"+
-    "</tr>");
-
   if (draw) {
     reset();
   }
