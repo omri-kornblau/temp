@@ -50,15 +50,15 @@ function toPrec (inp ,prec) {
 
 function putAngleInRange (angle, radians=true) {
   if (radians) {
-    angle *= -180/Math.PI;
+    angle *= -1;
   }
 
-  while (angle >= 360) {
-    angle -= 360;
+  while (angle >= Math.PI) {
+    angle -= Math.PI;
   }
 
   while (angle < 0) {
-    angle += 360;
+    angle += Math.PI;
   }
   return (angle);
 }
@@ -319,11 +319,12 @@ class AppData {
       for (let i = 0; i < traj["time"].length; i++) {
         output += toPrec((maxTime - traj["time"][i]), precision) + seperator;
         // Inevrted x and y for 1690s robot
-        output += toPrec(-1*traj["y"][i] + realFieldHeight/2, precision) + seperator; 
+        output += toPrec(-1*traj["y"][i] + realFieldHeight/2, precision) + seperator;
         output += toPrec(traj["x"][i], precision) + seperator;
         output += toPrec(-1*traj["vy"][i], precision) + seperator;
         output += toPrec(traj["vx"][i], precision) + seperator;
         output += toPrec(putAngleInRange(traj["heading"][i]), precision) + seperator;
+        output += toPrec(-1 * traj["wheading"][i], precision) + seperator;
         output += (traj["slow"][i] ? "1" : "0") + seperator;
         output += "\n";
       }
@@ -337,7 +338,7 @@ class AppData {
     this.getPoints().points.forEach(point => {
       pointsData.push(point.data);
     });
-    
+
     let dataObject = {
       name: this.name,
       params: this.getParams(),
@@ -354,9 +355,9 @@ class AppData {
     this.solverData[this.version].params.params = data.params.params;
     this.solverData[this.version].path = data.path;
     this.solverData[this.version].traj = data.traj;
-    
+
     $('#points').html("");
-    
+
     data.points.forEach(point => {
       addPoint(
         point["x"],
@@ -368,7 +369,7 @@ class AppData {
         point["switch"],
         false);
     });
-    
+
     // this.getPoints().update();
     // this.solverData[this.version].points.solvePoints = this.solverData[this.version].points.points;
     // this.updateForms();
@@ -500,10 +501,10 @@ function initField() {
       let diffX = -(prevMouseX - event.x);
       let diffY = (prevMouseY - event.y);
 
-      let isInCanvas = 
+      let isInCanvas =
         (Math.abs(panTrackX-diffX) <= (realFieldWidth*zoomAmount - realFieldWidth)*pixel_meters)
         && (Math.abs(panTrackY+diffY) <= (realFieldHeight*zoomAmount - realFieldHeight)*pixel_meters);
-  
+
       if ((zoomAmount > 1) && isInCanvas) {
 
         panTrackX += diffX;
@@ -613,16 +614,16 @@ function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, s
     x = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["x"]+1));
     y = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["y"]+1));
   }
-  
+
   $('#points').append(`<tr class="point move-cursor">`+
-    `<td class="delete"><a class="btn btn-link btn-small" onclick="alignRobot(this)">` + 
+    `<td class="delete"><a class="btn btn-link btn-small" onclick="alignRobot(this)">` +
     `<i class="glyphicon glyphicon-object-align-left glyphicon-small"></i>` +
     `</a></td>` +
     `<td class="x"><input class="form-control form-control-small" type="number" step="0.1" placeholder="X" oninput="reset()" value=` +
-    x + 
+    x +
     `></td>` +
     `<td class="y"><input class="form-control form-control-small" type="number" step="0.1" placeholder="Y" oninput="reset()" value=` +
-    y + 
+    y +
     `></td>`+
     "<td class='direction'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
     direction*180/Math.PI +
@@ -630,8 +631,8 @@ function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, s
     "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
     heading*180/Math.PI +
     "></td>"+
-    `<td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" step="0.1" value=` + 
-    start_mag + 
+    `<td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" step="0.1" value=` +
+    start_mag +
     `></td>` +
     `<td class='end_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" step="0.1" value=` +
     end_mag +
@@ -705,14 +706,14 @@ function loadAppData () {
     if (files !== undefined) {
       fs.readFile(files[0], (err, jsonData) => {
         appData = new AppData();
-        
+
         appData.loadData(JSON.parse(jsonData));
-        
+
         setDuration("Duration: ");
         clickedGraph = true;
         newSolve = false;
         drawField(false);
-        $("#download").show(100); 
+        $("#download").show(100);
       });
     }
   });
@@ -766,10 +767,10 @@ function pan () {
 function solve (command=0) {
   appData.getPoints().update();
   appData.getParams().update();
-  
+
   let pointsData = appData.getPoints().getData();
   let params = appData.getParams().getData();
-  
+
   let data = [];
   let start = 0;
   let path_num = 0;
@@ -778,46 +779,46 @@ function solve (command=0) {
   for(let i = 0; i < pointsData.length; i++)  {
     if (i == pointsData.length - 1) {
       data.push({
-        "params": params, 
+        "params": params,
         "points":pointsData.slice(start),
-        "scalars_x":appData.getPath()[path_num]["scalars_x"], 
+        "scalars_x":appData.getPath()[path_num]["scalars_x"],
         "scalars_y":appData.getPath()[path_num]["scalars_y"],
         "move_dir":move_dir,
         "slow_end":pointsData[i]["slow_dist"],
         "slow_start":(start === 0) ? pointsData[start]["slow_dist"] : 0
       });
     }
-      
+
     if (pointsData[i]["switch"]  == "true") {
       if (i !== 0) {
         data.push({
-          "params": params, 
+          "params": params,
           "points":pointsData.slice(start, i + 1),
-          "scalars_x":appData.getPath()[path_num]["scalars_x"], 
+          "scalars_x":appData.getPath()[path_num]["scalars_x"],
           "scalars_y":appData.getPath()[path_num]["scalars_y"],
           "move_dir":move_dir,
           "slow_end":pointsData[i]["slow_dist"],
           "slow_start":(start === 0) ? pointsData[start]["slow_dist"] : 0
         });
-        
+
         start = i;
-        
+
         if (!newSolve) {
           path_num++;
-        }  
+        }
       }
-      move_dir *= -1;   
+      move_dir *= -1;
     }
   }
 
   appData.newVersion();
-  
+
   //$("#params_cont").blur();
   $("#download").hide(300);
   $("#loader").show(300);
-  
+
   let sentData = JSON.stringify({'data': data, 'cmd': command});
-  
+
   $.post("http://127.0.0.1:3000/", {'data': sentData}, function(data, status) {
     $("#loader").hide(300);
     $("#download").show(300);

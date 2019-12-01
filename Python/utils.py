@@ -70,6 +70,7 @@ class trajectory_point(object):
         self.x = x
         self.angle = angle
         self.heading = heading
+        self.wheading = 0
         self.vel = 0
         self.vx = 0
         self.vy = 0
