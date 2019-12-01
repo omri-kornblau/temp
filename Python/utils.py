@@ -55,10 +55,10 @@ class point(object):
             mag = self.start_mag
         else:
             mag = self.end_mag
-            
+
         self.dx = math.cos(self.angle)*mag
         self.dy = math.sin(self.angle)*mag
-        
+
         pass
 
 class trajectory_point(object):
@@ -86,12 +86,14 @@ class trajectory_point(object):
         new_acc = (self.vel-prev_point.vel)/dt
         if (new_acc > max_acc):
             self.vel = sign(prev_point.dist)*((2*prev_point.acc*abs(prev_point.dist) + prev_point.vel**2))**0.5
+            self.vel = min(max_vel, self.vel, key=abs)
             new_dt = prev_point.dist/self.vel
             self.acc = min(prev_point.acc + jerk*new_dt, max_acc, key=abs)
 
 
     def update_point_forward(self, prev_point, max_vel, max_acc, jerk):
         self.vel = sign(self.dist)*((2*prev_point.acc*abs(self.dist) + prev_point.vel**2))**0.5
+        self.vel = min(max_vel, self.vel, key=abs)
         dt = self.dist/(self.vel + 10**(-8))
 
         max_acc_by_vel = max(max_acc-max_acc*(abs(self.vel)/max_vel), 0.1)
