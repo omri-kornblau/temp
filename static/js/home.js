@@ -48,17 +48,17 @@ function toPrec (inp ,prec) {
   return(String(ans));
 }
 
-function putAngleInRange (angle, radians=true) {
-  if (radians) {
+function putAngleInRange (angle, flipDirection=true) {
+  if (flipDirection) {
     angle *= -1;
   }
 
   while (angle >= Math.PI) {
-    angle -= Math.PI;
+    angle -= 2 * Math.PI;
   }
 
   while (angle < 0) {
-    angle += Math.PI;
+    angle += 2 * Math.PI;
   }
   return (angle);
 }
