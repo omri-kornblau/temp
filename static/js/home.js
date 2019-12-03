@@ -405,7 +405,6 @@ function drawPath (path){
 
   let robotWidth = appData.getParams().params["width"];
   f_ctx.beginPath();
-
   let inc = 2;
   for (let i = 0; i < path_points.length - inc; i+=inc){
     let val = parseInt(i*100/path_points.length);
@@ -418,8 +417,8 @@ function drawPath (path){
     let x1 = path_points[i+inc]["x"];
     let y1 = path_points[i+inc]["y"];
 
-    let traj_i = parseInt(i*appData.getTraj()["heading"].length/path_points.length);
-    let heading = appData.getTraj()["heading"][traj_i];
+    let traj_i = parseInt(i*path.traj.heading.length/path_points.length);
+    let heading = path.traj.heading[traj_i];
     let alpha = heading;
 
     x = x + Math.cos(alpha)*robot_height/2;
