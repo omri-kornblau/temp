@@ -483,7 +483,7 @@ class path_finder(object):
                     curr_vel = max_angular_vel - (spin_time - time_diff + acc_time)*max_angular_acc
                 traj[i].heading = traj[i-1].heading + utils.sign(heading_diff)*curr_vel*cycle
                 if (i > 1):
-                    traj[i].wheading = utils.delta_angle(traj[i].heading, traj[i-2].heading) / cycle*2
+                    traj[i].wheading = utils.delta_angle(traj[i].heading, traj[i-2].heading) / (cycle * 2)
                 else:
                     traj[i].wheading = 0
 
