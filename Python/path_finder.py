@@ -452,7 +452,7 @@ class path_finder(object):
                 dx  = (tpoints[i].x - tpoints[i-1].x)/dt
                 dy  = (tpoints[i].y - tpoints[i-1].y)/dt
                 da  = (utils.delta_angle(tpoints[i].angle, tpoints[i-1].angle))/dt
-                direction = math.atan(dy / dx)
+                direction = math.atan2(dy / dx)
                 traj[t].x = dx*p_time - dx*tpoints[i-1].time + tpoints[i-1].x
                 traj[t].y = dy*p_time - dy*tpoints[i-1].time + tpoints[i-1].y
                 traj[t].angle = (da*p_time - da*tpoints[i-1].time + tpoints[i-1].angle) % (2*math.pi)
