@@ -77,6 +77,7 @@ class trajectory_point(object):
         self.acc = 0
         self.dist = 0
         self.rule = 0
+        self.slow_no_cam = False
         self.slow = False
 
     def update_distances (self, prev_point):

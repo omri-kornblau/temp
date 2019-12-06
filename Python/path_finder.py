@@ -402,12 +402,14 @@ class path_finder(object):
 
                 if (total_dist < self.slow_start):
                     tpoints[i+1].update_point_forward(tpoints[i], robot.slow_max_vel, robot.max_acc, robot.jerk)
+                    tpoints[i+1].slow_no_cam = True
                 elif (total_dist < (self.length_cost_val-self.slow_end)):
                     tpoints[i+1].update_point_forward(tpoints[i], robot.max_vel, robot.max_acc, robot.jerk)
                     tpoints[i+1].slow = False
                 else:
                     tpoints[i+1].update_point_forward(tpoints[i], robot.slow_max_vel, robot.max_acc, robot.jerk)
                     tpoints[i+1].slow = True
+                    tpoints[i+1].slow_no_cam = True
 
                 i += 1
                 s += ds
@@ -424,8 +426,8 @@ class path_finder(object):
         for i in range(len(tpoints))[1:]:
             #re calc time by velocities
             tpoints[i].update_point(tpoints[i-1], self.move_dir)
-            if (tpoints[i].slow != tpoints[i-1].slow):
-                if (tpoints[i].slow):
+            if (tpoints[i].slow_no_cam != tpoints[i-1].slow_no_cam):
+                if (tpoints[i].slow_no_cam):
                     spin_stop_time = tpoints[i].time
                 else:
                     spin_start_time = tpoints[i].time
@@ -452,7 +454,7 @@ class path_finder(object):
                 dx  = (tpoints[i].x - tpoints[i-1].x)/dt
                 dy  = (tpoints[i].y - tpoints[i-1].y)/dt
                 da  = (utils.delta_angle(tpoints[i].angle, tpoints[i-1].angle))/dt
-                direction = math.atan2(dy / dx)
+                direction = math.atan2(dy, dx)
                 traj[t].x = dx*p_time - dx*tpoints[i-1].time + tpoints[i-1].x
                 traj[t].y = dy*p_time - dy*tpoints[i-1].time + tpoints[i-1].y
                 traj[t].angle = (da*p_time - da*tpoints[i-1].time + tpoints[i-1].angle) % (2*math.pi)
@@ -460,6 +462,7 @@ class path_finder(object):
                 traj[t].acc = (traj[t].vel - traj[t-1].vel)/cycle
                 traj[t].time = p_time
                 traj[t].slow = tpoints[i-1].slow
+                traj[t].slow_no_cam = tpoints[i-1].slow_no_cam
                 traj[t].vx = traj[t].vel * math.cos(direction)
                 traj[t].vy = traj[t].vel * math.sin(direction)
 
