@@ -362,6 +362,7 @@ class AppData {
       addPoint(
         point["x"],
         point["y"],
+        point["direction"],
         point["heading"],
         point["start_mag"],
         point["end_mag"],
@@ -613,7 +614,6 @@ function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, s
     x = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["x"]+1));
     y = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["y"]+1));
   }
-
   $('#points').append(`<tr class="point move-cursor">`+
     `<td class="delete"><a class="btn btn-link btn-small" onclick="alignRobot(this)">` +
     `<i class="glyphicon glyphicon-object-align-left glyphicon-small"></i>` +
@@ -624,23 +624,25 @@ function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, s
     `<td class="y"><input class="form-control form-control-small" type="number" step="0.1" placeholder="Y" oninput="reset()" value=` +
     y +
     `></td>`+
-    "<td class='direction'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
+    `<td class="direction"><input class="form-control form-control-small" type="number" placeholder="α" oninput="reset()" step="5" value=`+
     direction*180/Math.PI +
     "></td>"+
-    "<td class='heading'><input class='form-control form-control-small' type='number' placeholder='α' oninput='reset()' step='5' value="+
+    `<td class="heading"><input class="form-control form-control-small" type="number" placeholder="α" oninput="reset()" step="5" value=`+
     heading*180/Math.PI +
     "></td>"+
-    `<td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" step="0.1" value=` +
+    `<td class="start_mag"><input class="form-control form-control-small" type="number" placeholder="mag" oninput="reset()" step="0.1" value=` +
     start_mag +
     `></td>` +
-    `<td class='end_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" step="0.1" value=` +
+    `<td class="end_mag"><input class="form-control form-control-small" type="number" placeholder="mag" oninput="reset()" step="0.1" value=` +
     end_mag +
     `></td>` +
-    `<td class="slow_dist"><input class="form-control form-control-small" type="number" placeholder="slow" oninput="reset()" step=0.1 value=` +
+    `<td class="slow_dist"><input class="form-control form-control-small" type="number" placeholder="slow" oninput="reset()" step="0.1" value=` +
     slow +
     `></td>` +
-    // `<td class="switch"><label class="toggle" onclick="reset()"><input type="checkbox" ${(reverse === 'true' ? "checked" : "")}>`+
-    `<td class='switch'><a class="switch-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a>` +
+    // `<td class="switch"><label class="toggle" onclick="reset()"><input type="checkbox" ${(reverse === "true" ? "checked" : "")}>`+
+    `<td class="switch"><a class="` +
+    (reverse === 'true' ? "checked " : "") +
+    `switch-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a>` +
     `</td>` +
     `<td class="delete"><a class="btn btn-danger btn-small" onclick="deletePoint(this)">`+
     `<i class="glyphicon glyphicon-trash glyphicon-small"></i>`+
