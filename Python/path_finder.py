@@ -396,7 +396,7 @@ class path_finder(object):
                 else:
                     break
 
-                tpoints[i+1].update_distances(tpoints[i])
+                tpoints[i+1].update_distances(tpoints[i], end_angle)
 
                 total_dist += tpoints[i+1].dist
 
@@ -454,7 +454,6 @@ class path_finder(object):
                 dx  = (tpoints[i].x - tpoints[i-1].x)/dt
                 dy  = (tpoints[i].y - tpoints[i-1].y)/dt
                 da  = (utils.delta_angle(tpoints[i].angle, tpoints[i-1].angle))/dt
-                direction = math.atan2(dy, dx)
                 traj[t].x = dx*p_time - dx*tpoints[i-1].time + tpoints[i-1].x
                 traj[t].y = dy*p_time - dy*tpoints[i-1].time + tpoints[i-1].y
                 traj[t].angle = (da*p_time - da*tpoints[i-1].time + tpoints[i-1].angle) % (2*math.pi)
@@ -463,8 +462,8 @@ class path_finder(object):
                 traj[t].time = p_time
                 traj[t].slow = tpoints[i-1].slow
                 traj[t].slow_no_cam = tpoints[i-1].slow_no_cam
-                traj[t].vx = traj[t].vel * math.cos(direction)
-                traj[t].vy = traj[t].vel * math.sin(direction)
+                traj[t].vx = traj[t].vel * math.cos(traj[t].angle)
+                traj[t].vy = traj[t].vel * math.sin(traj[t].angle)
 
                 p_time = (t+1)*cycle+time_offset+bias
 

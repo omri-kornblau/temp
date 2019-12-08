@@ -80,8 +80,9 @@ class trajectory_point(object):
         self.slow_no_cam = False
         self.slow = False
 
-    def update_distances (self, prev_point):
+    def update_distances (self, prev_point, angle):
         self.dist = ((self.x-prev_point.x)**2 + (self.y-prev_point.y)**2)**0.5
+        self.angle = angle
 
     def update_point_backward (self, prev_point, max_vel, max_acc, jerk):
         dt = prev_point.time - self.time
