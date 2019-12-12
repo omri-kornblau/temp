@@ -40,6 +40,8 @@ class path_finder(object):
     DEFAULT_DS = 1e-5
     END_S_THRES = 0.97
 
+    DELAY_OMEGA = 0.140 #s
+
     def __init__(self, params, scalars_x, scalars_y, move_direction, slow_start, slow_end, *points):
         """
         each parameter should be a tuple of (x, y, angle)
@@ -468,6 +470,9 @@ class path_finder(object):
                 p_time = (t+1)*cycle+time_offset+bias
 
         heading_diff = utils.delta_angle(self.points[-1].heading, self.points[0].heading)
+        print(self.DELAY_OMEGA)
+        spin_start_time += self.DELAY_OMEGA
+        spin_stop_time -= self.DELAY_OMEGA
         time_diff = spin_stop_time - spin_start_time
         max_angular_acc = robot.max_angular_acc
         max_angular_vel =  (time_diff - math.sqrt(time_diff**2 - 4*abs(heading_diff)/max_angular_acc)) * max_angular_acc / 2
