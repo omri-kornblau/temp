@@ -9,7 +9,7 @@ import math
 import json
 import sys
 import utils
-
+import copy
 
 class path_finder(object):
     """docstring for path_finder"""
@@ -342,7 +342,7 @@ class path_finder(object):
         else:
             opt.minimize(self.cost_function, np.ravel([self.scalars_x, self.scalars_y]), method = self.OPTIMIZE_FUNCTION)
 
-    def find_trajectory(self, robot, time_offset):
+    def find_basic_trajectory(self, robot, time_offset):
         first_point_angle = math.atan2(self.dyds(0, self.MIN), self.dxds(0, self.MIN))
 
         total_dist = 0
@@ -372,7 +372,7 @@ class path_finder(object):
                     ds = max(new_ds, self.DEFAULT_DS)
 
                     #Protection from too high ds
-                    if ds > 0.01:
+                    if ds > 0.001:
                         ds = 0.001
 
                     #Store all the ds's of the begininng to use in the end
@@ -422,12 +422,18 @@ class path_finder(object):
             tpoints[i-1].update_point_backward(tpoints[i], robot.max_vel, robot.max_acc, robot.jerk)
             i -= 1
 
-        spin_start_time = time_offset
-        spin_stop_time = 0
         tpoints[0].time = time_offset
         for i in range(len(tpoints))[1:]:
             #re calc time by velocities
             tpoints[i].update_point(tpoints[i-1], self.move_dir)
+
+        return tpoints
+
+    def find_trajectory(self, robot, time_offset):
+        tpoints = self.find_basic_trajectory(robot, time_offset)
+        spin_start_time = time_offset
+        spin_stop_time = 0
+        for i in range(len(tpoints))[1:]:
             if (tpoints[i].slow_no_cam != tpoints[i-1].slow_no_cam):
                 if (tpoints[i].slow_no_cam):
                     spin_stop_time = tpoints[i].time
@@ -435,6 +441,37 @@ class path_finder(object):
                     spin_start_time = tpoints[i].time
         if (spin_stop_time == 0):
             spin_stop_time = tpoints[-1].time
+
+        heading_diff = utils.delta_angle(self.points[-1].heading, self.points[0].heading)
+        spin_start_time += self.DELAY_OMEGA
+        spin_stop_time -= self.DELAY_OMEGA
+        time_diff = spin_stop_time - spin_start_time
+        max_angular_acc = robot.max_angular_acc
+        max_angular_vel = (time_diff - math.sqrt(time_diff**2 - 4*abs(heading_diff)/max_angular_acc)) * max_angular_acc / 2
+        robot_radius = (robot.width**2 + robot.height**2)**0.5
+        max_linear_by_angular = max_angular_vel * robot_radius
+        original_max_vel = robot.max_vel
+        robot.max_vel *= robot.max_vel / (robot.max_vel + max_linear_by_angular)
+        tpoints = self.find_basic_trajectory(robot, time_offset)
+        spin_start_time = time_offset
+        spin_stop_time = 0
+        for i in range(len(tpoints))[1:]:
+            if (tpoints[i].slow_no_cam != tpoints[i-1].slow_no_cam):
+                if (tpoints[i].slow_no_cam):
+                    spin_stop_time = tpoints[i].time
+                else:
+                    spin_start_time = tpoints[i].time
+        if (spin_stop_time == 0):
+            spin_stop_time = tpoints[-1].time
+
+        heading_diff = utils.delta_angle(self.points[-1].heading, self.points[0].heading)
+        spin_start_time += self.DELAY_OMEGA
+        spin_stop_time -= self.DELAY_OMEGA
+        time_diff = spin_stop_time - spin_start_time
+        max_angular_acc = robot.max_angular_acc
+        max_angular_vel =  (time_diff - math.sqrt(time_diff**2 - 4*abs(heading_diff)/max_angular_acc)) * max_angular_acc / 2
+        acc_time =  max_angular_vel / max_angular_acc
+        head_time = time_offset
 
         #interpolate to cycle time
         traj = [trajectory_point(tpoints[0].x, tpoints[0].y, tpoints[0].angle, self.points[0].heading)]
@@ -469,15 +506,6 @@ class path_finder(object):
 
                 p_time = (t+1)*cycle+time_offset+bias
 
-        heading_diff = utils.delta_angle(self.points[-1].heading, self.points[0].heading)
-        print(self.DELAY_OMEGA)
-        spin_start_time += self.DELAY_OMEGA
-        spin_stop_time -= self.DELAY_OMEGA
-        time_diff = spin_stop_time - spin_start_time
-        max_angular_acc = robot.max_angular_acc
-        max_angular_vel =  (time_diff - math.sqrt(time_diff**2 - 4*abs(heading_diff)/max_angular_acc)) * max_angular_acc / 2
-        acc_time =  max_angular_vel / max_angular_acc
-        head_time = time_offset
         for i in range(len(traj))[1:]:
             head_time += cycle
             if (head_time >= spin_start_time and head_time <= spin_stop_time):
@@ -496,6 +524,8 @@ class path_finder(object):
 
             else:
                 traj[i].heading = traj[i-1].heading
+
+        robot.max_vel = original_max_vel
 
         self.trajectory = traj
 

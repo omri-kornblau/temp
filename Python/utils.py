@@ -26,8 +26,8 @@ class Robot (object):
         self.max_acc = params.get("max_acc")
         self.max_angular_acc = params.get("max_angular_acc")
         self.jerk = params.get("jerk")
-        self.width_factor = 1.3
-        self.width = params.get("width")*self.width_factor
+        self.width = params.get("width")
+        self.height = params.get("height")
         self.cycle = params.get("cycle")
 
 class point(object):
