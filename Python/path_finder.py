@@ -448,7 +448,7 @@ class path_finder(object):
         time_diff = spin_stop_time - spin_start_time
         max_angular_acc = robot.max_angular_acc
         max_angular_vel = (time_diff - math.sqrt(time_diff**2 - 4*abs(heading_diff)/max_angular_acc)) * max_angular_acc / 2
-        robot_radius = (robot.width**2 + robot.height**2)**0.5
+        robot_radius = ((robot.width/2)**2 + (robot.height/2)**2)**0.5
         max_linear_by_angular = max_angular_vel * robot_radius
         original_max_vel = robot.max_vel
         robot.max_vel *= robot.max_vel / (robot.max_vel + max_linear_by_angular)
