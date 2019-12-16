@@ -39,9 +39,6 @@ let clickedGraph = true;
 let data_version = 0; //stores current data version
 let newSolve    = true; //whether there is data or not
 
-let robot_height = 0.8 //Meters
-
-
 function toPrec (inp ,prec) {
   ans = inp*Math.pow(10, prec);
   ans = Math.round(ans, 0)/Math.pow(10, prec);
@@ -405,6 +402,7 @@ function drawPath (path){
   path_points = path.path_points;
 
   let robotWidth = appData.getParams().params["width"];
+  let robotHeight = appData.getParams().params["height"];
   f_ctx.beginPath();
   let inc = 2;
   for (let i = 0; i < path_points.length - inc; i+=inc){
@@ -422,8 +420,8 @@ function drawPath (path){
     let heading = path.traj.heading[traj_i];
     let alpha = heading;
 
-    x = x + Math.cos(alpha)*robot_height/2;
-    y = y + Math.sin(alpha)*robot_height/2;
+    x = x + Math.cos(alpha)*robotHeight/2;
+    y = y + Math.sin(alpha)*robotHeight/2;
 
     let xr = Math.cos(alpha+Math.PI/2)*robotWidth/2 + x;
     let yr = Math.sin(alpha+Math.PI/2)*robotWidth/2 + y;
@@ -441,8 +439,8 @@ function drawPath (path){
     x = path_points[i]["x"];
     y = path_points[i]["y"];
 
-    x = x + Math.cos(alpha+Math.PI)*robot_height/2;
-    y = y + Math.sin(alpha+Math.PI)*robot_height/2;
+    x = x + Math.cos(alpha+Math.PI)*robotHeight/2;
+    y = y + Math.sin(alpha+Math.PI)*robotHeight/2;
 
     xr = Math.cos(alpha+Math.PI/2)*robotWidth/2 + x;
     yr = Math.sin(alpha+Math.PI/2)*robotWidth/2 + y;
