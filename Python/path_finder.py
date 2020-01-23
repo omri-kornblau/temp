@@ -42,7 +42,7 @@ class path_finder(object):
 
     DELAY_OMEGA = 0.140 #s
 
-    def __init__(self, params, scalars_x, scalars_y, move_direction, slow_start, slow_end, *points):
+    def __init__(self, params, scalars_x, scalars_y, slow_start, slow_end, *points):
         """
         each parameter should be a tuple of (x, y, angle)
         """
@@ -51,7 +51,6 @@ class path_finder(object):
         self.path_amount = len(self.points)-1
         self.quintic = params.get("method")
 
-        self.move_dir = move_direction
         self.slow_start = slow_start
         self.slow_end = slow_end
 
@@ -347,9 +346,6 @@ class path_finder(object):
 
         total_dist = 0
 
-        if self.move_dir < 0:
-            first_point_angle = utils.delta_angle(first_point_angle, math.pi)
-
         tpoints = [trajectory_point(self.x(0, self.MIN), self.y(0, self.MIN), first_point_angle)]
         tpoints[0].reset(robot.max_acc)
 
@@ -425,7 +421,7 @@ class path_finder(object):
         tpoints[0].time = time_offset
         for i in range(len(tpoints))[1:]:
             #re calc time by velocities
-            tpoints[i].update_point(tpoints[i-1], self.move_dir)
+            tpoints[i].update_point(tpoints[i-1])
 
         return tpoints
 
@@ -584,14 +580,10 @@ def main(data_from_js):
             path_point["end_mag"])
             for path_point in path_data["points"]]
 
-        if (index > 0):
-            path_points[0].angle += math.pi
-
         paths.append(path_finder(
             path_data["params"],
             path_data["scalars_x"],
             path_data["scalars_y"],
-            path_data["move_dir"],
             path_data["slow_start"],
             path_data["slow_end"],
             *path_points))

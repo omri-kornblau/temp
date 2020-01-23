@@ -109,7 +109,7 @@ class Point {
     this.data["start_mag"] = Number(this.element.querySelectorAll('.start_mag > input')[0].value);
     this.data["end_mag"] = Number(this.element.querySelectorAll('.end_mag > input')[0].value);
     this.data["slow_dist"] = Number(this.element.querySelectorAll('.slow_dist > input')[0].value);
-    this.data["switch"] = String(this.element.querySelectorAll('.switch > .switch-checkbox')[0].classList.contains('checked'));
+    this.data["stop"] = String(this.element.querySelectorAll('.stop > .stop-checkbox')[0].classList.contains('checked'));
   }
 }
 
@@ -179,7 +179,7 @@ class Points {
                 this.solvePoints[i].data["start_mag"],
                 this.solvePoints[i].data["end_mag"],
                 this.solvePoints[i].data["slow_dist"],
-                this.solvePoints[i].data["switch"],
+                this.solvePoints[i].data["stop"],
                 false);
     }
     this.points = this.solvePoints;
@@ -364,7 +364,7 @@ class AppData {
         point["start_mag"],
         point["end_mag"],
         point["slow_dist"],
-        point["switch"],
+        point["stop"],
         false);
     });
 
@@ -637,10 +637,10 @@ function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, s
     `<td class="slow_dist"><input class="form-control form-control-small" type="number" placeholder="slow" oninput="reset()" step="0.1" value=` +
     slow +
     `></td>` +
-    // `<td class="switch"><label class="toggle" onclick="reset()"><input type="checkbox" ${(reverse === "true" ? "checked" : "")}>`+
-    `<td class="switch"><a class="` +
+    // `<td class="stop"><label class="toggle" onclick="reset()"><input type="checkbox" ${(reverse === "true" ? "checked" : "")}>`+
+    `<td class="stop"><a class="` +
     (reverse === 'true' ? "checked " : "") +
-    `switch-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a>` +
+    `stop-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a>` +
     `</td>` +
     `<td class="delete"><a class="btn btn-danger btn-small" onclick="deletePoint(this)">`+
     `<i class="glyphicon glyphicon-trash glyphicon-small"></i>`+
@@ -771,9 +771,9 @@ function solve (command=0) {
   let params = appData.getParams().getData();
 
   let data = [];
+
   let start = 0;
   let path_num = 0;
-  let move_dir = 1
 
   for(let i = 0; i < pointsData.length; i++)  {
     if (i == pointsData.length - 1) {
@@ -782,31 +782,28 @@ function solve (command=0) {
         "points":pointsData.slice(start),
         "scalars_x":appData.getPath()[path_num]["scalars_x"],
         "scalars_y":appData.getPath()[path_num]["scalars_y"],
-        "move_dir":move_dir,
         "slow_end":pointsData[i]["slow_dist"],
         "slow_start":(start === 0) ? pointsData[start]["slow_dist"] : 0
       });
     }
 
-    if (pointsData[i]["switch"]  == "true") {
+    if (pointsData[i]["stop"]  == "true") {
       if (i !== 0) {
         data.push({
           "params": params,
           "points":pointsData.slice(start, i + 1),
           "scalars_x":appData.getPath()[path_num]["scalars_x"],
           "scalars_y":appData.getPath()[path_num]["scalars_y"],
-          "move_dir":move_dir,
           "slow_end":pointsData[i]["slow_dist"],
           "slow_start":(start === 0) ? pointsData[start]["slow_dist"] : 0
         });
 
-        start = i;
+        start = i + 1;
 
         if (!newSolve) {
           path_num++;
         }
       }
-      move_dir *= -1;
     }
   }
 

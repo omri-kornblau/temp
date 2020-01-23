@@ -108,14 +108,10 @@ class trajectory_point(object):
         self.vel = 0
         self.acc = 0.1
 
-    def update_point (self, prev_point, move_dir):
+    def update_point (self, prev_point):
         if ((prev_point.vel) == 0):
             dt = 0
         else:
             dt = self.dist/abs(prev_point.vel)
 
         self.time = prev_point.time + dt
-
-        if (move_dir < 0):
-            prev_point.vel *= -1
-            self.angle = delta_angle(self.angle, math.pi)
