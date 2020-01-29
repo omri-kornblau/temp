@@ -109,7 +109,7 @@ class Point {
     this.data["start_mag"] = Number(this.element.querySelectorAll('.start_mag > input')[0].value);
     this.data["end_mag"] = Number(this.element.querySelectorAll('.end_mag > input')[0].value);
     this.data["slow_dist"] = Number(this.element.querySelectorAll('.slow_dist > input')[0].value);
-    this.data["stop"] = String(this.element.querySelectorAll('.stop > .stop-checkbox')[0].classList.contains('checked'));
+    this.data["stop"] = String(this.element.querySelectorAll('.stop > .switch-checkbox')[0].classList.contains('checked'));
   }
 }
 
@@ -470,7 +470,8 @@ function drawPath (path){
 
 function initField() {
   $("#loader").hide();
-  //$("#params_cont").blur();
+  $("#points").sortable({ update: fixPointsAfterStop });
+
   field_canvas = document.getElementById("field_canvas");
   points_canvas = document.getElementById("points_canvas");
 
@@ -573,6 +574,7 @@ function newVersion() {
 }
 
 function reset(cleanPath=true) {
+  fixPointsAfterStop();
   appData.getPoints().update();
   newSolve = true;
   clickedGraph = true;
@@ -640,7 +642,7 @@ function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, s
     // `<td class="stop"><label class="toggle" onclick="reset()"><input type="checkbox" ${(reverse === "true" ? "checked" : "")}>`+
     `<td class="stop"><a class="` +
     (reverse === 'true' ? "checked " : "") +
-    `stop-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a>` +
+    `switch-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a>` +
     `</td>` +
     `<td class="delete"><a class="btn btn-danger btn-small" onclick="deletePoint(this)">`+
     `<i class="glyphicon glyphicon-trash glyphicon-small"></i>`+
@@ -656,6 +658,28 @@ function deletePoint (elem) {
     $(elem).parent().parent().remove();
     reset();
   }
+}
+
+function fixPointsAfterStop () {
+  const pointElements = $(".point");
+  Object.keys(pointElements)
+    .filter(originalIdx => {
+      const point = $(pointElements[originalIdx]);
+      const tds = $("td.x > input, td.y > input", point);
+      tds.attr("disabled", false);
+      return $(".stop a.switch-checkbox.checked", point).length > 0;
+    })
+    .map(originalIdx => {
+      const point = $(pointElements[originalIdx]);
+      const nextPoint = $(pointElements[Number(originalIdx) + 1]);
+      const tds = $("td.x > input, td.y > input", point);
+      const nextTds = $("td.x > input, td.y > input", nextPoint);
+      tds.toArray().forEach((td, key) => {
+        $(nextTds[key]).val($(td).val());
+      });
+      nextTds.attr("disabled", true);
+      return tds;
+    });
 }
 
 function alignRobot (elem) {
