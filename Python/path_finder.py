@@ -428,16 +428,7 @@ class path_finder(object):
     def find_trajectory(self, robot, time_offset):
         tpoints = self.find_basic_trajectory(robot, time_offset)
         spin_start_time = time_offset
-        spin_stop_time = 0
-        for i in range(len(tpoints))[1:]:
-            if (tpoints[i].slow_no_cam != tpoints[i-1].slow_no_cam):
-                if (tpoints[i].slow_no_cam):
-                    spin_stop_time = tpoints[i].time
-                else:
-                    spin_start_time = tpoints[i].time
-        if (spin_stop_time == 0):
-            spin_stop_time = tpoints[-1].time
-
+        spin_stop_time = tpoints[-1].time
         heading_diff = utils.delta_angle(self.points[-1].heading, self.points[0].heading)
         spin_start_time += self.DELAY_OMEGA
         spin_stop_time -= self.DELAY_OMEGA
@@ -448,17 +439,11 @@ class path_finder(object):
         max_linear_by_angular = max_angular_vel * robot_radius
         original_max_vel = robot.max_vel
         robot.max_vel *= robot.max_vel / (robot.max_vel + max_linear_by_angular)
+
         tpoints = self.find_basic_trajectory(robot, time_offset)
+
         spin_start_time = time_offset
-        spin_stop_time = 0
-        for i in range(len(tpoints))[1:]:
-            if (tpoints[i].slow_no_cam != tpoints[i-1].slow_no_cam):
-                if (tpoints[i].slow_no_cam):
-                    spin_stop_time = tpoints[i].time
-                else:
-                    spin_start_time = tpoints[i].time
-        if (spin_stop_time == 0):
-            spin_stop_time = tpoints[-1].time
+        spin_stop_time = tpoints[-1].time
 
         heading_diff = utils.delta_angle(self.points[-1].heading, self.points[0].heading)
         spin_start_time += self.DELAY_OMEGA
