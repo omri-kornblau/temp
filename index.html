@@ -93,6 +93,7 @@
             <ul class="nav nav-tabs nav-justified">
                 <li class="active"><a data-toggle="tab" href="#traj-params-panel">Trajectory</a></li>
                 <li><a data-toggle="tab" href="#path-params-panel">Path</a></li>
+                <li><a data-toggle="tab" href="#velocities-params-panel">Velocities</a></li>
             </ul>
 
             <div class="panel-body tab-content">
@@ -200,6 +201,25 @@
                         </div>
                     </div>
                 </div>
+                <div id="velocities-params-panel" class="tab-pane fade in active">
+                    <!-- <div class="panel-heading" type="button">
+                        <h3 class="panel-title">Trajectory Parameters</h3>
+                    </div> -->
+                    <div class="" id="traj-params">
+                        <div class="scrollpan scrollbar-primary">
+                            <div style ="margin-right: 20px">
+                                <table class="table">
+                                    <thead>
+                                        <th>Segment</th>
+                                        <th style="text-align: center">Velocity</th>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             </div>
         </div>
@@ -222,6 +242,7 @@
                             <th>Mag<span style="font-size: 70%"> in</span></th>
                             <th>Mag<span style="font-size: 70%"> out</span></th>
                             <th>Slow</th>
+                            <th>Vel</th>
                             <th>stop</th>
                             <th></th>
                         </thead>
@@ -235,6 +256,7 @@
                                 <td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='end_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='slow_dist'><input class="form-control form-control-small" type='number' placeholder="slow" oninput="reset()" value=0 step="0.1"></td>
+                                <td class='p_vel'><input class="form-control form-control-small" type='number' placeholder="vel" oninput="reset()" value=3.2 step="0.1"></td>
                                 <td class='stop'> <a class='switch-checkbox' onclick="toggleCheckBox(this); reset()"><i class="glyphicon glyphicon-retweet"></i></a> </td>
                                 <!-- <td class='stop'><label class="toggle"><input type="checkbox" onclick="reset(this)"><span class="handle"></span></label></td> -->
                                 <td class='delete'><a class="btn btn-danger btn-small"
@@ -251,6 +273,7 @@
                                 <td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='end_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
                                 <td class='slow_dist'><input class="form-control form-control-small" type='number' placeholder="slow" oninput="reset()" value=0 step="0.1"></td>
+                                <td class='p_vel'><input class="form-control form-control-small" type='number' placeholder="vel" oninput="reset()" value=3.2 step="0.1"></td>
                                 <td class='stop'><a class="switch-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a></td>
                                 <td class='delete'><a class="btn btn-danger btn-small"onclick='deletePoint(this)'>
                                     <i class="glyphicon glyphicon-trash glyphicon-small"></i>
