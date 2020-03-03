@@ -110,6 +110,7 @@ class Point {
     this.data["end_mag"] = Number(this.element.querySelectorAll('.end_mag > input')[0].value);
     this.data["slow_dist"] = Number(this.element.querySelectorAll('.slow_dist > input')[0].value);
     this.data["stop"] = String(this.element.querySelectorAll('.stop > .switch-checkbox')[0].classList.contains('checked'));
+    this.data["p_vel"] = Number(this.element.querySelectorAll('.p_vel > input')[0].value);
   }
 }
 
@@ -179,6 +180,7 @@ class Points {
                 this.solvePoints[i].data["start_mag"],
                 this.solvePoints[i].data["end_mag"],
                 this.solvePoints[i].data["slow_dist"],
+                this.solvePoints[i].data["p_vel"] || 3.2,
                 this.solvePoints[i].data["stop"],
                 false);
     }
@@ -202,14 +204,17 @@ class Params {
       this.params[input_elements[i].getAttribute('id')] = Number(input_elements[i].value);
     }
     this.params['method'] = document.getElementById('method').checked;
+    this.params['max_velocities'] = getCurrentVels();
   }
 
   load (path_data) {
     let input_elements = document.getElementsByClassName("form-control-param");
     for (let i = 0; i < input_elements.length; i++) {
       //handle cases where there are no costs (e.g. init)
-        input_elements[i].value = this.params[input_elements[i].getAttribute('id')];
+      input_elements[i].value = this.params[input_elements[i].getAttribute('id')];
     }
+
+    this.params['max_velocities'] = getCurrentVels();
 
     if (path_data[0]["costs"] != NaN) {
         document.getElementById("pos_cost_val").innerHTML = path_data[0]["costs"]["pos_cost"].toPrecision(3);
@@ -364,6 +369,7 @@ class AppData {
         point["start_mag"],
         point["end_mag"],
         point["slow_dist"],
+        point["p_vel"] || 3.2,
         point["stop"],
         false);
     });
@@ -575,7 +581,11 @@ function newVersion() {
 
 function reset(cleanPath=true) {
   fixPointsAfterStop();
+  // TODO: Make this less stupid
   appData.getPoints().update();
+  appData.getParams().update();
+  // Order matters
+  makeMaxVelocityInputs();
   newSolve = true;
   clickedGraph = true;
   if (newSolve) {
@@ -609,7 +619,7 @@ function undo_change () {
   change();
 }
 
-function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, slow=0, reverse=false, draw=true) {
+function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, slow=0, p_vel=3.2, reverse=false, draw=true) {
   if (x < 0) {
     x = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["x"]+1));
     y = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["y"]+1));
@@ -638,6 +648,9 @@ function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, s
     `></td>` +
     `<td class="slow_dist"><input class="form-control form-control-small" type="number" placeholder="slow" oninput="reset()" step="0.1" value=` +
     slow +
+    `></td>` +
+    `<td class='p_vel'><input class="form-control form-control-small" type='number' placeholder="vel" oninput="reset()" step="0.1" value=` +
+    p_vel +
     `></td>` +
     // `<td class="stop"><label class="toggle" onclick="reset()"><input type="checkbox" ${(reverse === "true" ? "checked" : "")}>`+
     `<td class="stop"><a class="` +
@@ -680,6 +693,34 @@ function fixPointsAfterStop () {
       nextTds.attr("disabled", true);
       return tds;
     });
+}
+
+function getCurrentVels() {
+  return ($("#velocities-params-panel .form-control")
+    .toArray().map(inp => inp.value).map(Number));
+}
+
+function makeMaxVelocityInputs () {
+  const pointElements = $(".point");
+  const stopPoints = pointElements
+    .slice(0, -1) // Ignore last point
+    .toArray()
+    .filter(point => $(".stop a.switch-checkbox.checked", point).length > 0)
+  const velAmount = Number(stopPoints.length) + 1
+
+  const currentVels = appData.getParams().getData()["max_velocities"];
+  const velsHtml = Array(velAmount).fill(0).map((_, idx) => {
+    const defaultMaxVel = currentVels[idx] || appData.getParams().getData()["max_vel"];
+    const velElement =
+      `<tr>
+          <td>#${idx}</td>
+          <td><input class="form-control form-control-param"
+          type='number' id="max_vel_${idx}" value=${defaultMaxVel}></td>
+      </tr>`
+    return velElement;
+  }).join("");
+
+  $("#velocities-params-panel tbody").html(velsHtml);
 }
 
 function alignRobot (elem) {

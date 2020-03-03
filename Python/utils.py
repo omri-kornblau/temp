@@ -32,13 +32,14 @@ class Robot (object):
 
 class point(object):
     """point in the path defined by the user"""
-    def __init__(self, x, y, angle, heading, s_mag, e_mag):
+    def __init__(self, x, y, angle, heading, s_mag, e_mag, p_vel):
         self.x = x
         self.y = y
         self.angle = angle
         self.heading = heading
         self.start_mag = s_mag
         self.end_mag = e_mag
+        self.p_vel = p_vel
         self.magnitude_factor = 1.2
 
         self.dx = math.cos(angle)*self.start_mag

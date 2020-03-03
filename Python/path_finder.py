@@ -386,9 +386,11 @@ class path_finder(object):
                 start_angle = math.atan2(self.dyds(path, s), self.dxds(path, s))
 
                 if (s+ds <= self.MAX):
+                    robot.max_vel = self.points[path + 1].p_vel
                     tpoints.append(trajectory_point(self.x(path, s+ds), self.y(path, s+ds)))
                     end_angle = math.atan2(self.dyds(path, s+ds), self.dxds(path, s+ds))
                 elif (path + 1 < self.path_amount):
+                    robot.max_vel = self.points[path + 1].p_vel
                     tpoints.append(trajectory_point(self.x(path+1, s+ds-self.MAX), self.y(path+1, s+ds-self.MAX)))
                     end_angle = math.atan2(self.dyds(path+1, s+ds-self.MAX), self.dxds(path+1, s+ds-self.MAX))
                 else:
@@ -562,7 +564,8 @@ def main(data_from_js):
             path_point["direction"],
             path_point["heading"],
             path_point["start_mag"],
-            path_point["end_mag"])
+            path_point["end_mag"],
+            path_point["p_vel"])
             for path_point in path_data["points"]]
 
         paths.append(path_finder(
