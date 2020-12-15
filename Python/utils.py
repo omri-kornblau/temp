@@ -30,9 +30,9 @@ class Robot (object):
         self.height = params.get("height")
         self.cycle = params.get("cycle")
 
-class point(object):
+class Point (object):
     """point in the path defined by the user"""
-    def __init__(self, x, y, angle, heading, s_mag, e_mag, p_vel):
+    def __init__(self, x, y, angle, heading, s_mag, e_mag, p_vel, use_heading):
         self.x = x
         self.y = y
         self.angle = angle
@@ -40,6 +40,7 @@ class point(object):
         self.start_mag = s_mag
         self.end_mag = e_mag
         self.p_vel = p_vel
+        self.use_heading = True if use_heading == "true" else False
         self.magnitude_factor = 1.2
 
         self.dx = math.cos(angle)*self.start_mag

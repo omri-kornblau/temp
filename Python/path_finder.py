@@ -352,6 +352,8 @@ class path_finder(object):
         i = 0
         s = self.MAX
 
+        points_timestamps = [tpoints[0]]
+
         #run forward
         for path in range(self.path_amount):
             s -= self.MAX
@@ -390,10 +392,12 @@ class path_finder(object):
                     tpoints.append(trajectory_point(self.x(path, s+ds), self.y(path, s+ds)))
                     end_angle = math.atan2(self.dyds(path, s+ds), self.dxds(path, s+ds))
                 elif (path + 1 < self.path_amount):
+                    points_timestamps.append(tpoints[i])
                     robot.max_vel = self.points[path + 1].p_vel
                     tpoints.append(trajectory_point(self.x(path+1, s+ds-self.MAX), self.y(path+1, s+ds-self.MAX)))
                     end_angle = math.atan2(self.dyds(path+1, s+ds-self.MAX), self.dxds(path+1, s+ds-self.MAX))
                 else:
+                    points_timestamps.append(tpoints[i])
                     break
 
                 tpoints[i+1].update_distances(tpoints[i], end_angle)
@@ -425,36 +429,65 @@ class path_finder(object):
             #re calc time by velocities
             tpoints[i].update_point(tpoints[i-1])
 
-        return tpoints
+        points_timestamps = [tpoint.time for tpoint in points_timestamps]
+
+        return tpoints, points_timestamps
+
+    def get_spin_sector(self, robot, points, index):
+        max_angular_acc = robot.max_angular_acc
+
+        time_diff = points[index + 1]["timestamp"] - points[index]["timestamp"]
+        heading_diff = utils.delta_angle(points[index + 1]["point"].heading, points[index]["point"].heading)
+
+        max_angular_vel = (time_diff - math.sqrt(time_diff**2 - 4*abs(heading_diff)/max_angular_acc)) * max_angular_acc / 2
+        acc_time =  max_angular_vel / max_angular_acc
+
+        return ({
+            "time_diff": time_diff,
+            "heading_diff": heading_diff,
+            "max_angular_vel": max_angular_vel,
+            "acc_time": acc_time,
+            "start_time": points[index]["timestamp"],
+            "end_time": points[index + 1]["timestamp"]
+        })
+
+    def find_spin_sectors(self, points_timestamps, robot):
+        # TODO: Move timestamps into the points objects
+        points = [{
+            "point": self.points[index],
+            "timestamp": points_timestamps[index]
+        } for index in range(len(self.points)) if (self.points[index].use_heading) ]
+
+        spin_sectors = [
+            self.get_spin_sector(robot, points, index)
+            for index in range(len(points) - 1)
+        ]
+
+        return spin_sectors
 
     def find_trajectory(self, robot, time_offset):
-        tpoints = self.find_basic_trajectory(robot, time_offset)
-        spin_start_time = time_offset
-        spin_stop_time = tpoints[-1].time
-        heading_diff = utils.delta_angle(self.points[-1].heading, self.points[0].heading)
-        spin_start_time += self.DELAY_OMEGA
-        spin_stop_time -= self.DELAY_OMEGA
-        time_diff = spin_stop_time - spin_start_time
-        max_angular_acc = robot.max_angular_acc
-        max_angular_vel = (time_diff - math.sqrt(time_diff**2 - 4*abs(heading_diff)/max_angular_acc)) * max_angular_acc / 2
-        robot_radius = ((robot.width/2)**2 + (robot.height/2)**2)**0.5
+        tpoints, points_timestamps = self.find_basic_trajectory(robot, time_offset)
+
+        points_timestamps[0] = tpoints[0].time + self.DELAY_OMEGA
+        points_timestamps[-1] = tpoints[-1].time - self.DELAY_OMEGA
+
+        spin_sectors = self.find_spin_sectors(points_timestamps, robot)
+
+        max_angular_vel = max([sec["max_angular_vel"] for sec in spin_sectors])
+
+        robot_radius = ((robot.width / 2)**2 + (robot.height / 2)**2)**0.5
         max_linear_by_angular = max_angular_vel * robot_radius
         original_max_vel = robot.max_vel
+
         robot.max_vel *= robot.max_vel / (robot.max_vel + max_linear_by_angular)
 
-        tpoints = self.find_basic_trajectory(robot, time_offset)
+        # Recalculate trajectory given new max linear velocity defined by the angular velocity
+        tpoints, points_timestamps = self.find_basic_trajectory(robot, time_offset)
 
-        spin_start_time = time_offset
-        spin_stop_time = tpoints[-1].time
+        points_timestamps[0] = tpoints[0].time + self.DELAY_OMEGA
+        points_timestamps[-1] = tpoints[-1].time - self.DELAY_OMEGA
 
-        heading_diff = utils.delta_angle(self.points[-1].heading, self.points[0].heading)
-        spin_start_time += self.DELAY_OMEGA
-        spin_stop_time -= self.DELAY_OMEGA
-        time_diff = spin_stop_time - spin_start_time
-        max_angular_acc = robot.max_angular_acc
-        max_angular_vel =  (time_diff - math.sqrt(time_diff**2 - 4*abs(heading_diff)/max_angular_acc)) * max_angular_acc / 2
-        acc_time =  max_angular_vel / max_angular_acc
-        head_time = time_offset
+        spin_sectors = self.find_spin_sectors(points_timestamps, robot)
 
         #interpolate to cycle time
         traj = [trajectory_point(tpoints[0].x, tpoints[0].y, tpoints[0].angle, self.points[0].heading)]
@@ -489,24 +522,46 @@ class path_finder(object):
 
                 p_time = (t+1)*cycle+time_offset+bias
 
-        for i in range(len(traj))[1:]:
-            head_time += cycle
-            if (head_time >= spin_start_time and head_time <= spin_stop_time):
-                spin_time = head_time - spin_start_time
+        traj_index = 1
+        sector_index = 0
+        sector_time = tpoints[0].time
+        was_in_sector = False
+
+        while (traj_index < len(traj)):
+            if sector_index < len(spin_sectors) and spin_sectors[sector_index]["start_time"] <= sector_time <= spin_sectors[sector_index]["end_time"]:
+                sector = spin_sectors[sector_index]
+
+                max_angular_vel = sector["max_angular_vel"]
+                time_diff = sector["time_diff"]
+                acc_time = sector["acc_time"]
+
+                was_in_sector = True
+
+                spin_time = sector_time - sector["start_time"]
+
                 if spin_time < acc_time:
-                    curr_vel = spin_time*max_angular_acc
+                    curr_vel = spin_time * robot.max_angular_acc
                 elif spin_time < time_diff - acc_time:
                     curr_vel = max_angular_vel
                 else:
-                    curr_vel = max_angular_vel - (spin_time - time_diff + acc_time)*max_angular_acc
-                traj[i].heading = traj[i-1].heading + utils.sign(heading_diff)*curr_vel*cycle
-                if (i > 1):
-                    traj[i].wheading = utils.delta_angle(traj[i].heading, traj[i-2].heading) / (cycle * 2)
-                else:
-                    traj[i].wheading = 0
+                    curr_vel = max_angular_vel - (spin_time - time_diff + acc_time) * robot.max_angular_acc
 
+                traj[traj_index].heading = traj[traj_index-1].heading + utils.sign(sector["heading_diff"])*curr_vel*cycle
+
+                if (traj_index >= 2):
+                    traj[traj_index].wheading = utils.delta_angle(traj[traj_index].heading, traj[traj_index-2].heading) / (cycle * 2)
+                else:
+                    traj[traj_index].wheading = 0
             else:
-                traj[i].heading = traj[i-1].heading
+                if (was_in_sector):
+                    sector_index += 1
+                    was_in_sector = False
+
+                traj[traj_index].heading = traj[traj_index - 1].heading
+                traj[traj_index].wheading = 0
+
+            traj_index += 1
+            sector_time += cycle
 
         robot.max_vel = original_max_vel
 
@@ -558,15 +613,16 @@ def main(data_from_js):
 
     #set up path_finder objects
     for index, path_data in enumerate(in_data):
-        path_points = [utils.point(
+        path_points = [utils.Point(
             path_point["x"],
             path_point["y"],
             path_point["direction"],
             path_point["heading"],
             path_point["start_mag"],
             path_point["end_mag"],
-            path_point["p_vel"])
-            for path_point in path_data["points"]]
+            path_point["p_vel"],
+            path_point["use_heading"]
+        ) for path_point in path_data["points"]]
 
         paths.append(path_finder(
             path_data["params"],

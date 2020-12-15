@@ -110,6 +110,7 @@ class Point {
     this.data["end_mag"] = Number(this.element.querySelectorAll('.end_mag > input')[0].value);
     this.data["slow_dist"] = Number(this.element.querySelectorAll('.slow_dist > input')[0].value);
     this.data["stop"] = String(this.element.querySelectorAll('.stop > .switch-checkbox')[0].classList.contains('checked'));
+    this.data["use_heading"] = String(this.element.querySelectorAll('.use_heading > .switch-checkbox')[0].classList.contains('checked'));
     this.data["p_vel"] = Number(this.element.querySelectorAll('.p_vel > input')[0].value);
   }
 }
@@ -182,6 +183,7 @@ class Points {
                 this.solvePoints[i].data["slow_dist"],
                 this.solvePoints[i].data["p_vel"] || 3.2,
                 this.solvePoints[i].data["stop"],
+                this.solvePoints[i].data["use_heading"],
                 false);
     }
     this.points = this.solvePoints;
@@ -371,6 +373,7 @@ class AppData {
         point["slow_dist"],
         point["p_vel"] || 3.2,
         point["stop"],
+        point["use_heading"],
         false);
     });
 
@@ -619,7 +622,7 @@ function undo_change () {
   change();
 }
 
-function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, slow=0, p_vel=3.2, reverse=false, draw=true) {
+function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, slow=0, p_vel=3.2, reverse=false, use_heading=true, draw=true) {
   if (x < 0) {
     x = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["x"]+1));
     y = Math.min(realFieldWidth,(appData.getPoints().getData()[appData.getPoints().amount-1]["y"]+1));
@@ -656,6 +659,10 @@ function addPoint (x=-1, y=-1, direction=0, heading=0, start_mag=1, end_mag=1, s
     `<td class="stop"><a class="` +
     (reverse === 'true' ? "checked " : "") +
     `switch-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a>` +
+    `</td>` +
+    `<td class="use_heading"><a class="` +
+    (use_heading === 'true' ? "checked " : "") +
+    `switch-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-stop"></i></a>` +
     `</td>` +
     `<td class="delete"><a class="btn btn-danger btn-small" onclick="deletePoint(this)">`+
     `<i class="glyphicon glyphicon-trash glyphicon-small"></i>`+
