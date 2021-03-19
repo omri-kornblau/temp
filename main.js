@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const { app, BrowserWindow } = require('electron')
 const python_script = "path_finder.py";
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -7,9 +7,10 @@ const python_script = "path_finder.py";
 let mainWindow;
 var path = require('path');
 
-function createWindow () {
+function createWindow() {
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: 1200
+  mainWindow = new BrowserWindow({
+    width: 1200
     , height: 800
     , icon: path.join(__dirname, 'static/img/favicon.png')
     , webPreferences: {
@@ -72,7 +73,7 @@ const server = http.createServer((req, res) => {
       var input = decodeURIComponent(body).split("=")[1];
       console.log(input);
       var PythonShell = require('python-shell');
-	    if (process.platform === "linux") {
+      if (process.platform === "linux") {
         var options = {
           mode: 'text',
           pythonPath: '/usr/bin/python3',
@@ -80,29 +81,29 @@ const server = http.createServer((req, res) => {
           scriptPath: `${__dirname}/Python`,
           args: [input]
         };
-	    }
+      }
       else {
-		    var options = {
-           	   mode: 'text',
-           	   pythonPath: 'C:\\Python37\\python.exe',
-           	   pythonOptions: ['-u'], // get print results in real-time
-           	   scriptPath: `${__dirname}/Python`,
-           	   args: [input]
-              };
-	    }
-        var pyshell = new PythonShell(python_script, options);
-        pyshell.on('message', function (message) {
-          // received a message sent from the Python script (a simple "print" statement)
-            if (message[0] === '#') {
-              res.end(message.slice(1));
-            } else {
-              console.log(message)
-            }
-            });
+        var options = {
+          mode: 'text',
+          pythonPath: 'python',
+          pythonOptions: ['-u'], // get print results in real-time
+          scriptPath: `${__dirname}/Python`,
+          args: [input]
+        };
+      }
+      var pyshell = new PythonShell(python_script, options);
+      pyshell.on('message', function (message) {
+        // received a message sent from the Python script (a simple "print" statement)
+        if (message[0] === '#') {
+          res.end(message.slice(1));
+        } else {
+          console.log(message)
+        }
+      });
 
-            pyshell.end(function (err,code,signal) {if (err) throw err;});
-        });
-    }
+      pyshell.end(function (err, code, signal) { if (err) throw err; });
+    });
+  }
 });
 
 server.listen(3000);

@@ -1,14 +1,15 @@
 <!doctype html>
 <html>
-    <head>
-        <title>Path Finder - Swerve </title>
-        <link rel="stylesheet" href="static/css/bootstrap.min.css">
-        <link rel="stylesheet" href="static/css/chartist.css">
-        <link rel="stylesheet" href="static/css/bootflat.css">
-        <link rel="icon" href="static/img/favicon.ico">
-    </head>
 
-    <body onload='initField()' style="background-color: #EEE">
+<head>
+    <title>Path Finder - Swerve </title>
+    <link rel="stylesheet" href="static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="static/css/chartist.css">
+    <link rel="stylesheet" href="static/css/bootflat.css">
+    <link rel="icon" href="static/img/favicon.ico">
+</head>
+
+<body onload='initField()' style="background-color: #EEE">
     <div class="container">
         <div class="traj-area" style="display: none;">
             <button type="button" class="close" onclick="showGraph()" aria_hidden="true">x</button>
@@ -24,72 +25,93 @@
         </div>
 
         <div class="col-md-12">
-        <div class="jumbotron">
-        <div class="jumbotron-header" style="text-align: center">
-            <div class="navbar navbar-inverse" role="navigation">
-                <a class="navbar-brand" href="#" style="padding: 5px 15px;"><img src="static/img/logo-path.png" height="40"></a>
-                <input type="text" placeholder="enter auto name.." onchange="appData.name = this.value" value="untitled" id="auto_name" class="form-control-navbar">
-                    <!-- <ul class="nav navbar-nav" >
+            <div class="jumbotron">
+                <div class="jumbotron-header" style="text-align: center">
+                    <div class="navbar navbar-inverse" role="navigation">
+                        <a class="navbar-brand" href="#" style="padding: 5px 15px;"><img src="static/img/logo-path.png"
+                                height="40"></a>
+                        <input type="text" placeholder="enter auto name.." onchange="appData.name = this.value"
+                            value="untitled" id="auto_name" class="form-control-navbar">
+                        <!-- <ul class="nav navbar-nav" >
                     <li class="toggle"><a href="#">Path</a></li>
                         <li class="toggle"><a href="#">Trajectory</a></li>
                         <li class="toggle"><a href="#">Simulate</a></li>
                     </ul> -->
-            </div>
-        </div>
-            <div class="jumbotron-contents" style="text-align: center">
-                <div class="row align-items-start">
-                    <div class="col-xs-3" style="text-align: center">
-                        <div class="solve-group">
-                            <div class="btn-group">
-                                <a class="btn btn-danger" onclick="solve()"><i class="glyphicon glyphicon-fire"></i> FIND</a>
-                                <a class="btn btn-danger" onclick="resetData(); drawField(true);"><i class="glyphicon glyphicon-repeat"></i></a>
-                            </div>
+                    </div>
+                </div>
+                <div class="jumbotron-contents" style="text-align: center">
+                    <div class="row align-items-start">
+                        <div class="col-xs-3" style="text-align: center">
+                            <div class="solve-group">
+                                <div class="btn-group">
+                                    <a class="btn btn-danger" onclick="solve()"><i class="glyphicon glyphicon-fire"></i>
+                                        FIND</a>
+                                    <a class="btn btn-danger" onclick="resetData(); drawField(true);"><i
+                                            class="glyphicon glyphicon-repeat"></i></a>
+                                </div>
 
-                            <div>
-                                <h6 id="version-header"></h6>
-                            </div>
+                                <div>
+                                    <h6 id="version-header"></h6>
+                                </div>
 
-                        </div>
-                        <div id="download" class="solve-group"" style="display: none;">
+                            </div>
+                            <div id="download" class="solve-group"" style=" display: none;">
                                 <h6 id="time-header"></h6>
 
-                            <div class="btn-group">
-                                <a class="btn btn-success" onclick="saveTraj()"><i class="glyphicon glyphicon-download-alt"></i> SAVE</a>
-                                <a class="btn btn-success" onclick="showGraph();"><i class="glyphicon glyphicon-stats"></i></a>
-                                <a class="btn btn-success" onclick="solve(1);"><i class="glyphicon glyphicon-refresh"></i></a>
+                                <div class="btn-group">
+                                    <a class="btn btn-success" onclick="saveTraj()"><i
+                                            class="glyphicon glyphicon-download-alt"></i> SAVE</a>
+                                    <a class="btn btn-success" onclick="showGraph();"><i
+                                            class="glyphicon glyphicon-stats"></i></a>
+                                    <a class="btn btn-success" onclick="solve(1);"><i
+                                            class="glyphicon glyphicon-refresh"></i></a>
+                                </div>
+                            </div>
+
+                            <div id="loader" class="lds-ellipsis">
+                                <div></div>
+                                <div></div>
+                                <div></div>
+                                <div></div>
                             </div>
                         </div>
-
-                        <div id="loader" class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
-                    </div>
-                    <div class="col-xs-8">
-                        <div class="canvas-wraper">
-                            <canvas id="field_canvas" width="680" height="340"> </canvas>
-                            <canvas id="points_canvas" width="680" height="340"> </canvas>
+                        <div class="col-xs-8">
+                            <div class="canvas-wraper">
+                                <canvas id="field_canvas" width="680" height="340"> </canvas>
+                                <canvas id="points_canvas" width="680" height="340"> </canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="jumbotron-footer" style="text-align: center">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary" onclick="undo_change()"><i class="glyphicon glyphicon-chevron-left"></i></button>
-                    <button type="button" class="btn btn-primary" onclick="redo_change()"><i class="glyphicon glyphicon-chevron-right"></i></button>
-                    <button type="button" class="btn btn-primary" onclick="zoom(-1);"><i class="glyphicon glyphicon-home"></i></button>
-                    <button type="button" class="btn btn-primary" onclick="zoom(1.25);"><i class="glyphicon glyphicon-zoom-in"></i></button>
-                    <button type="button" class="btn btn-primary" onclick="zoom(0.8);"><i class="glyphicon glyphicon-zoom-out"></i></button>
-                    <button type="button" class="btn btn-primary" onclick="pan();"><i class="glyphicon glyphicon-move"></i></button>
-                    <button type="button" class="btn btn-primary" onclick="addPoint()"><i class="glyphicon glyphicon-plus-sign"></i></button>
-                    <button type="button" class="btn btn-primary" onclick="saveAppData()"><i class="glyphicon glyphicon-floppy-disk"></i></button>
-                    <button type="button" class="btn btn-primary" onclick="loadAppData()"><i class="glyphicon glyphicon-paperclip"></i></button>
+                <div class="jumbotron-footer" style="text-align: center">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" onclick="undo_change()"><i
+                                class="glyphicon glyphicon-chevron-left"></i></button>
+                        <button type="button" class="btn btn-primary" onclick="redo_change()"><i
+                                class="glyphicon glyphicon-chevron-right"></i></button>
+                        <button type="button" class="btn btn-primary" onclick="zoom(-1);"><i
+                                class="glyphicon glyphicon-home"></i></button>
+                        <button type="button" class="btn btn-primary" onclick="zoom(1.25);"><i
+                                class="glyphicon glyphicon-zoom-in"></i></button>
+                        <button type="button" class="btn btn-primary" onclick="zoom(0.8);"><i
+                                class="glyphicon glyphicon-zoom-out"></i></button>
+                        <button type="button" class="btn btn-primary" onclick="pan();"><i
+                                class="glyphicon glyphicon-move"></i></button>
+                        <button type="button" class="btn btn-primary" onclick="addPoint()"><i
+                                class="glyphicon glyphicon-plus-sign"></i></button>
+                        <button type="button" class="btn btn-primary" onclick="saveAppData()"><i
+                                class="glyphicon glyphicon-floppy-disk"></i></button>
+                        <button type="button" class="btn btn-primary" onclick="loadAppData()"><i
+                                class="glyphicon glyphicon-paperclip"></i></button>
+                    </div>
                 </div>
             </div>
-        </div>
         </div>
     </div>
 
     <!-- <div class="container"> -->
-        <div class="col-md-5">
-            <div class="panel panel-primary">
+    <div class="col-md-5">
+        <div class="panel panel-primary">
             <ul class="nav nav-tabs nav-justified">
                 <li class="active"><a data-toggle="tab" href="#traj-params-panel">Trajectory</a></li>
                 <li><a data-toggle="tab" href="#path-params-panel">Path</a></li>
@@ -103,49 +125,57 @@
                     </div> -->
                     <div class="" id="path-params">
                         <div class="scrollpan scrollbar-primary">
-                            <div style ="margin-right: 20px">
-                              	<table class="table">
+                            <div style="margin-right: 20px">
+                                <table class="table">
                                     <!-- <thead>
                                         <th>Name</th>
                                         <th style="text-align: center">Value</th>
                                         <th></th>
                                     </thead> -->
-                              		<tbody>
+                                    <tbody>
                                         <tr>
                                             <td>Quintic Hermite</td>
-                                            <td><label class="toggle primary"><input id="method" type="checkbox" checked="true"><span class="handle"></span></label></td>
+                                            <td><label class="toggle primary"><input id="method" type="checkbox"
+                                                        checked="true"><span class="handle"></span></label></td>
                                         </tr>
                                         <tr>
-                		                	<td>Power</td>
-                                            <td><input class="form-control form-control-param" type='number' oninput="drawField()" id="poly" value=5></td>
-                		                </tr>
+                                            <td>Power</td>
+                                            <td><input class="form-control form-control-param" type='number'
+                                                    oninput="drawField()" id="poly" value=5></td>
+                                        </tr>
                                         <tr>
                                             <td>Radius</td>
-                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="radius" value=0 ></td>
+                                            <td><input class="form-control form-control-param" type='number'
+                                                    placeholder="enter val.." id="radius" value=0></td>
                                             <td><span class="badge badge-default" id="radius_cost_val">cost</span></td>
                                         </tr>
                                         <tr>
                                             <td>Radius Cont</td>
-                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="radius_cont" value=0 ></td>
-                                            <td><span class="badge badge-default" id="radius_cont_cost_val">cost</span></td>
+                                            <td><input class="form-control form-control-param" type='number'
+                                                    placeholder="enter val.." id="radius_cont" value=0></td>
+                                            <td><span class="badge badge-default" id="radius_cont_cost_val">cost</span>
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td>Length</td>
-                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="length" value=0 ></td>
-                                          <td><span class="badge badge-default" id="length_cost_val">cost</span></td>
+                                            <td><input class="form-control form-control-param" type='number'
+                                                    placeholder="enter val.." id="length" value=0></td>
+                                            <td><span class="badge badge-default" id="length_cost_val">cost</span></td>
                                         </tr>
-                		                <tr>
-                		                	<td>Position</td>
-                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="position" value=1 ></td>
+                                        <tr>
+                                            <td>Position</td>
+                                            <td><input class="form-control form-control-param" type='number'
+                                                    placeholder="enter val.." id="position" value=1></td>
                                             <td><span class="badge badge-default" id="pos_cost_val">cost</span></td>
-                		                </tr>
-                		                <tr>
-                		                	<td>Angle</td>
-                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="angle" value=1 ></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Angle</td>
+                                            <td><input class="form-control form-control-param" type='number'
+                                                    placeholder="enter val.." id="angle" value=1></td>
                                             <td><span class="badge badge-default" id="angle_cost_val">cost</span></td>
-                		                </tr>
-                              		</tbody>
-                              	</table>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -156,7 +186,7 @@
                     </div> -->
                     <div class="" id="traj-params">
                         <div class="scrollpan scrollbar-primary">
-                            <div style ="margin-right: 20px">
+                            <div style="margin-right: 20px">
                                 <table class="table">
                                     <!-- <thead>
                                         <th>Name</th>
@@ -166,34 +196,42 @@
                                     <tbody>
                                         <tr>
                                             <td>Max Velocity</td>
-                                            <td><input class="form-control form-control-param" type='number'  id="max_vel" value=3.2></td>
+                                            <td><input class="form-control form-control-param" type='number'
+                                                    id="max_vel" value=3.2></td>
                                         </tr>
                                         <tr>
                                             <td>Max Acceleration</td>
-                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="max_acc" value=9 ></td>
+                                            <td><input class="form-control form-control-param" type='number'
+                                                    placeholder="enter val.." id="max_acc" value=9></td>
                                         </tr>
                                         <tr>
                                         <tr>
                                             <td>Slow Max Velocity</td>
-                                            <td><input class="form-control form-control-param" type='number'  id="slow_max_vel" value=2></td>
+                                            <td><input class="form-control form-control-param" type='number'
+                                                    id="slow_max_vel" value=2></td>
                                         </tr>
                                         <td>Jerk</td>
-                                            <td><input class="param form-control form-control-param" type='number' placeholder="enter val.." id="jerk" value=75 ></td>
+                                        <td><input class="param form-control form-control-param" type='number'
+                                                placeholder="enter val.." id="jerk" value=75></td>
                                         </tr>
                                         <td>Max Angular Acceleration</td>
-                                            <td><input class="param form-control form-control-param" type='number' placeholder="enter val.." id="max_angular_acc" value=7 ></td>
+                                        <td><input class="param form-control form-control-param" type='number'
+                                                placeholder="enter val.." id="max_angular_acc" value=7></td>
                                         </tr>
                                         <tr>
                                             <td>Robot Wheels Width</td>
-                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="width" value=0.5 ></td>
+                                            <td><input class="form-control form-control-param" type='number'
+                                                    placeholder="enter val.." id="width" value=0.5></td>
                                         </tr>
                                         <tr>
                                             <td>Robot Height</td>
-                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="height" value=0.5 ></td>
+                                            <td><input class="form-control form-control-param" type='number'
+                                                    placeholder="enter val.." id="height" value=0.5></td>
                                         </tr>
                                         <tr>
                                             <td>Cycle time</td>
-                                            <td><input class="form-control form-control-param" type='number' placeholder="enter val.." id="cycle" value=20></td>
+                                            <td><input class="form-control form-control-param" type='number'
+                                                    placeholder="enter val.." id="cycle" value=20></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -201,13 +239,13 @@
                         </div>
                     </div>
                 </div>
-                <div id="velocities-params-panel" class="tab-pane fade in active">
+                <div id="velocities-params-panel" class="tab-pane fade in">
                     <!-- <div class="panel-heading" type="button">
                         <h3 class="panel-title">Trajectory Parameters</h3>
                     </div> -->
-                    <div class="" id="traj-params">
+                    <div class="" id="velocities-params">
                         <div class="scrollpan scrollbar-primary">
-                            <div style ="margin-right: 20px">
+                            <div style="margin-right: 20px">
                                 <table class="table">
                                     <thead>
                                         <th>Segment</th>
@@ -221,92 +259,122 @@
                     </div>
                 </div>
             </div>
-            </div>
         </div>
-        <div class="col-md-7">
-            <div class="panel panel-primary">
-              <div class="panel-heading" style="text-align: center;">
-                <a class="panel-title">Points <!--    <a class="btn btn-link" style="color:white;"><i class="glyphicon glyphicon-plus-sign"></i></a> --></a>
-              </div>
+    </div>
+    <div class="col-md-7">
+        <div class="panel panel-primary">
+            <div class="panel-heading" style="text-align: center;">
+                <a class="panel-title">Points
+                    <!--    <a class="btn btn-link" style="color:white;"><i class="glyphicon glyphicon-plus-sign"></i></a> -->
+                </a>
+            </div>
 
-              <div class="panel-body">
+            <div class="panel-body">
                 <div class="scrollpan scrollbar-primary">
                     <div style="margin-right: 20px;">
                         <table class="table-condensed">
-                        <thead>
-                            <th> </th>
-                            <th>X</th>
-                            <th>Y</th>
-                            <th>Direction</th>
-                            <th>Heading</th>
-                            <th>Mag<span style="font-size: 70%"> in</span></th>
-                            <th>Mag<span style="font-size: 70%"> out</span></th>
-                            <th>Slow</th>
-                            <th>Vel</th>
-                            <th>Stop</th>
-                            <th>Use<span style="font-size: 70%"> Head</span></th>
-                            <th></th>
-                        </thead>
-                        <tbody  id="points">
-                            <tr class="point move-cursor">
-                                <td class='delete'><a class="btn btn-link btn-small" onclick='alignRobot(this)'><i class="glyphicon glyphicon-object-align-left glyphicon-small"></i></a></td>
-                                <td class='x'><input class="form-control form-control-small" type='number' step="0.1" placeholder="X" oninput="reset()" value=1 ></td>
-                                <td class='y'><input class="form-control form-control-small" type='number' step="0.1" placeholder="Y" oninput="reset()" value=1 ></td>
-                                <td class='direction'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=90 step="5"></td>
-                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="β" oninput="reset()" value=90 step="5"></td>
-                                <td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
-                                <td class='end_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
-                                <td class='slow_dist'><input class="form-control form-control-small" type='number' placeholder="slow" oninput="reset()" value=0 step="0.1"></td>
-                                <td class='p_vel'><input class="form-control form-control-small" type='number' placeholder="vel" oninput="reset()" value=3.2 step="0.1"></td>
-                                <td class='stop'> <a class='switch-checkbox' onclick="toggleCheckBox(this); reset()"><i class="glyphicon glyphicon-retweet"></i></a> </td>
-                                <td class='use_heading'> <a class='switch-checkbox checked' onclick="toggleCheckBox(this); reset()"><i class="glyphicon glyphicon-stop"></i></a> </td>
-                                <!-- <td class='stop'><label class="toggle"><input type="checkbox" onclick="reset(this)"><span class="handle"></span></label></td> -->
-                                <td class='delete'><a class="btn btn-danger btn-small"
-                                    onclick='deletePoint(this)'>
-                                    <i class="glyphicon glyphicon-trash glyphicon-small"></i>
-                                    </a></td>
-                            </tr>
-                            <tr class="point move-cursor">
-                                <td class='delete'><a class="btn btn-link btn-small" onclick='alignRobot(this)'><i class="glyphicon glyphicon-object-align-left glyphicon-small"></i></a></td>
-                                <td class='x'><input class="form-control form-control-small" type='number' step="0.1" placeholder="X" oninput="reset()" value=2 ></td>
-                                <td class='y'><input class="form-control form-control-small" type='number' step="0.1" placeholder="Y" oninput="reset()" value=2 ></td>
-                                <td class='direction'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=90 step="5"></td>
-                                <td class='heading'><input class="form-control form-control-small" type='number' placeholder="α" oninput="reset()" value=0 step="5"></td>
-                                <td class='start_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
-                                <td class='end_mag'><input class="form-control form-control-small" type='number' placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
-                                <td class='slow_dist'><input class="form-control form-control-small" type='number' placeholder="slow" oninput="reset()" value=0 step="0.1"></td>
-                                <td class='p_vel'><input class="form-control form-control-small" type='number' placeholder="vel" oninput="reset()" value=3.2 step="0.1"></td>
-                                <td class='stop'><a class="switch-checkbox" onclick="toggleCheckBox(this); reset();"><i class="glyphicon glyphicon-retweet"></i></a></td>
-                                <td class='use_heading'> <a class='switch-checkbox checked' onclick="toggleCheckBox(this); reset()"><i class="glyphicon glyphicon-stop"></i></a> </td>
-                                <td class='delete'><a class="btn btn-danger btn-small"onclick='deletePoint(this)'>
-                                    <i class="glyphicon glyphicon-trash glyphicon-small"></i>
-                                    </a></td>
-                            </tr>
-                        </tbody>
+                            <thead>
+                                <th> </th>
+                                <th>X</th>
+                                <th>Y</th>
+                                <th>Direction</th>
+                                <th>Heading</th>
+                                <th>Mag<span style="font-size: 70%"> in</span></th>
+                                <th>Mag<span style="font-size: 70%"> out</span></th>
+                                <th>Slow</th>
+                                <th>Vel</th>
+                                <th>Stop</th>
+                                <th>Use<span style="font-size: 70%"> Head</span></th>
+                                <th></th>
+                            </thead>
+                            <tbody id="points">
+                                <tr class="point move-cursor">
+                                    <td class='delete'><a class="btn btn-link btn-small" onclick='alignRobot(this)'><i
+                                                class="glyphicon glyphicon-object-align-left glyphicon-small"></i></a>
+                                    </td>
+                                    <td class='x'><input class="form-control form-control-small" type='number'
+                                            step="0.1" placeholder="X" oninput="reset()" value=1></td>
+                                    <td class='y'><input class="form-control form-control-small" type='number'
+                                            step="0.1" placeholder="Y" oninput="reset()" value=1></td>
+                                    <td class='direction'><input class="form-control form-control-small" type='number'
+                                            placeholder="α" oninput="reset()" value=90 step="5"></td>
+                                    <td class='heading'><input class="form-control form-control-small" type='number'
+                                            placeholder="β" oninput="reset()" value=90 step="5"></td>
+                                    <td class='start_mag'><input class="form-control form-control-small" type='number'
+                                            placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
+                                    <td class='end_mag'><input class="form-control form-control-small" type='number'
+                                            placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
+                                    <td class='slow_dist'><input class="form-control form-control-small" type='number'
+                                            placeholder="slow" oninput="reset()" value=0 step="0.1"></td>
+                                    <td class='p_vel'><input class="form-control form-control-small" type='number'
+                                            placeholder="vel" oninput="reset()" value=3.2 step="0.1"></td>
+                                    <td class='stop'> <a class='switch-checkbox'
+                                            onclick="toggleCheckBox(this); reset()"><i
+                                                class="glyphicon glyphicon-retweet"></i></a> </td>
+                                    <td class='use_heading'> <a class='switch-checkbox checked'
+                                            onclick="toggleCheckBox(this); reset()"><i
+                                                class="glyphicon glyphicon-stop"></i></a> </td>
+                                    <!-- <td class='stop'><label class="toggle"><input type="checkbox" onclick="reset(this)"><span class="handle"></span></label></td> -->
+                                    <td class='delete'><a class="btn btn-danger btn-small" onclick='deletePoint(this)'>
+                                            <i class="glyphicon glyphicon-trash glyphicon-small"></i>
+                                        </a></td>
+                                </tr>
+                                <tr class="point move-cursor">
+                                    <td class='delete'><a class="btn btn-link btn-small" onclick='alignRobot(this)'><i
+                                                class="glyphicon glyphicon-object-align-left glyphicon-small"></i></a>
+                                    </td>
+                                    <td class='x'><input class="form-control form-control-small" type='number'
+                                            step="0.1" placeholder="X" oninput="reset()" value=2></td>
+                                    <td class='y'><input class="form-control form-control-small" type='number'
+                                            step="0.1" placeholder="Y" oninput="reset()" value=2></td>
+                                    <td class='direction'><input class="form-control form-control-small" type='number'
+                                            placeholder="α" oninput="reset()" value=90 step="5"></td>
+                                    <td class='heading'><input class="form-control form-control-small" type='number'
+                                            placeholder="α" oninput="reset()" value=0 step="5"></td>
+                                    <td class='start_mag'><input class="form-control form-control-small" type='number'
+                                            placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
+                                    <td class='end_mag'><input class="form-control form-control-small" type='number'
+                                            placeholder="mag" oninput="reset()" value=1 step="0.1"></td>
+                                    <td class='slow_dist'><input class="form-control form-control-small" type='number'
+                                            placeholder="slow" oninput="reset()" value=0 step="0.1"></td>
+                                    <td class='p_vel'><input class="form-control form-control-small" type='number'
+                                            placeholder="vel" oninput="reset()" value=3.2 step="0.1"></td>
+                                    <td class='stop'><a class="switch-checkbox"
+                                            onclick="toggleCheckBox(this); reset();"><i
+                                                class="glyphicon glyphicon-retweet"></i></a></td>
+                                    <td class='use_heading'> <a class='switch-checkbox checked'
+                                            onclick="toggleCheckBox(this); reset()"><i
+                                                class="glyphicon glyphicon-stop"></i></a> </td>
+                                    <td class='delete'><a class="btn btn-danger btn-small" onclick='deletePoint(this)'>
+                                            <i class="glyphicon glyphicon-trash glyphicon-small"></i>
+                                        </a></td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
-              </div>
             </div>
         </div>
+    </div>
     <!-- </div> -->
 
-        <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
-        <!-- JQuery -->
-        <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-        <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
-        <!-- Bootstrap -->
-        <script src="https://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-        <!-- Chartist -->
-        <script src="static/js/chartist.min.js"></script>
-        <script src="static/js/chartist-plugin-zoom.min.js"></script>
-        <!-- PathFinder -->
-        <script src="static/js/home.js"></script>
-        <script src="static/js/graph-traj.js"></script>
-        <!-- Bootflat's JS files.-->
-        <script src="https://bootflat.github.io/bootflat/js/icheck.min.js"></script>
-        <script src="https://bootflat.github.io/bootflat/js/jquery.fs.selecter.min.js"></script>
-        <script src="https://bootflat.github.io/bootflat/js/jquery.fs.stepper.min.js"></script>
-        <script>if (window.module) module = window.module;</script>
-    </body>
+    <script>if (typeof module === 'object') { window.module = module; module = undefined; }</script>
+    <!-- JQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <!-- Chartist -->
+    <script src="static/js/chartist.min.js"></script>
+    <script src="static/js/chartist-plugin-zoom.min.js"></script>
+    <!-- PathFinder -->
+    <script src="static/js/home.js"></script>
+    <script src="static/js/graph-traj.js"></script>
+    <!-- Bootflat's JS files.-->
+    <script src="https://bootflat.github.io/bootflat/js/icheck.min.js"></script>
+    <script src="https://bootflat.github.io/bootflat/js/jquery.fs.selecter.min.js"></script>
+    <script src="https://bootflat.github.io/bootflat/js/jquery.fs.stepper.min.js"></script>
+    <script>if (window.module) module = window.module;</script>
+</body>
+
 </html>
