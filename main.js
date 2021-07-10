@@ -85,7 +85,7 @@ const server = http.createServer((req, res) => {
       else {
 		    var options = {
            	   mode: 'text',
-           	   pythonPath: 'C:\\Python37\\python.exe',
+           	   pythonPath: 'python',
            	   pythonOptions: ['-u'], // get print results in real-time
            	   scriptPath: 'Python',
            	   args: [input]
